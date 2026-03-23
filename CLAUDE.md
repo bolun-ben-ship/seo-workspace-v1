@@ -140,8 +140,11 @@ Update it immediately if any of the following have changed:
 | Structural folder changes | Update the Workspace Structure diagram |
 | New agency context files | Document them in `context/` section of the diagram |
 | Client added/removed | Update `clients.md` (not this file — client data lives there) |
+| Output filenames change in any skill | Update ALL of: `SKILLS-REFERENCE.md`, `seo-workflow/README.md`, and this file's Workspace Structure diagram |
 
 **Rule: whenever a skill is created, renamed, or significantly changed → update SKILLS-REFERENCE.md immediately, then run `bash seo-workflow/install.sh`, then CONFIRM to the user that SKILLS-REFERENCE.md has been updated before closing the task.**
+
+**Rule: whenever output filenames or report structures change in a skill → grep `seo-workflow/` and the repo root for the old filenames before closing the task, fix every match, then commit all affected files together.**
 
 This file is read by `/start-agency` to build the Agency Briefing.
 Keeping it accurate means every new session starts with correct context.
