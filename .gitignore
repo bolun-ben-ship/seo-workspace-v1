@@ -1,0 +1,31 @@
+# Credentials - never commit
+*.json
+# Allow MCP config files (use env var references, no hardcoded secrets)
+!.mcp.json
+!**/.mcp.json
+
+# Environment
+.env
+.env.local
+
+# Claude local settings (contains machine-specific config)
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# OS
+.DS_Store
+*.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/

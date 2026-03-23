@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "webflow": {
+      "command": "npx",
+      "args": ["-y", "@webflow/mcp-server@latest"],
+      "env": {
+        "WEBFLOW_TOKEN": "${WEBFLOW_AEXPHL_TOKEN}"
+      }
+    }
+  }
+}
