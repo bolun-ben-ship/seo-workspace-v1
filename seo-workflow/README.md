@@ -1,6 +1,6 @@
 # SEO Workflow — Claude Code Skills & Orchestrators
 
-A complete SEO and content pipeline for Claude Code. Includes 4 orchestrators, 2 data skills, 1 routing plugin, 13 specialist skills, 1 design skill, 1 planning skill, 1 reporting skill, 1 research skill, and 6 subagents — all installable from this repo.
+A complete SEO and content pipeline for Claude Code. Includes 4 orchestrators, 2 data skills, 1 routing plugin, 12 specialist skills, 1 design skill, 1 planning skill, 1 reporting skill, 1 research skill, and 6 subagents — all installable from this repo.
 
 ---
 
@@ -9,7 +9,7 @@ A complete SEO and content pipeline for Claude Code. Includes 4 orchestrators, 2
 ### Orchestrators
 | Skill | Trigger | What it does |
 |---|---|---|
-| `monthly-seo-run` | "monthly SEO run" / "run full monthly cycle" | Full monthly pipeline: audit → GSC/GA4 → plan → write 3 blogs → approve → execute on-page changes |
+| `3blog-seo-first-run` | "first run" / "full run" / "run everything" | Full run: audit → GSC/GA4 → plan → write 3 blogs → approve → execute on-page changes → before/after report |
 | `ai-seo-pipeline` | "automate SEO" / "set up SEO automation" | Long-term automation (3/6/12 months): questionnaire → initial run → weekly blogs → monthly on-page → reports |
 | `shopline-onpage-implement` | "fix on-page SEO on Shopline" / "implement SEO on Shopline" | Shopline-only: audit → GSC/GA4 → fetch live store → plan → approve → execute via Shopline REST API |
 | `webflow-onpage-implement` | "fix on-page SEO on Webflow" / "implement SEO on Webflow" | Webflow-only: audit → GSC/GA4 → fetch live site → plan → approve → execute via Webflow API + MCP |
@@ -33,7 +33,6 @@ A complete SEO and content pipeline for Claude Code. Includes 4 orchestrators, 2
 ### Content & Design Skills
 | Skill | Trigger | What it does |
 |---|---|---|
-| `3blog-pipeline` | "write 3 blogs" / "blog pipeline" | Content pipeline: audit → research → keywords → write 3 blogs → push to CMS as drafts (platform-aware) |
 | `carousel` | "/carousel" / "instagram carousel" | Branded 7-slide Instagram carousel: questionnaire → HTML preview → export as 1080×1350px PNGs |
 
 ### Planning & Reporting Skills
@@ -99,9 +98,9 @@ Restart Claude Code. All skills and subagents appear automatically.
 
 ```bash
 # Skills
-cp -r seo-workflow/monthly-seo-run seo-workflow/ai-seo-pipeline \
+cp -r seo-workflow/3blog-seo-first-run seo-workflow/ai-seo-pipeline \
       seo-workflow/shopline-onpage-implement seo-workflow/webflow-onpage-implement \
-      seo-workflow/3blog-pipeline seo-workflow/carousel \
+      seo-workflow/carousel \
       seo-workflow/seo-implementation-plan seo-workflow/seo-final-report \
       seo-workflow/ga4-report seo-workflow/gsc-report seo-workflow/last30days \
       seo-workflow/seo-and-blog seo-workflow/seo-audit seo-workflow/seo-plan \
@@ -133,7 +132,7 @@ claude-workspace-v2/
 │   │   ├── seo-technical.md
 │   │   └── seo-visual.md
 │   │
-│   ├── monthly-seo-run/              ← Orchestrators
+│   ├── 3blog-seo-first-run/          ← Orchestrators
 │   ├── ai-seo-pipeline/
 │   ├── shopline-onpage-implement/
 │   ├── webflow-onpage-implement/
@@ -146,13 +145,12 @@ claude-workspace-v2/
 │   │   ├── SKILL.md
 │   │   └── skills/
 │   │
-│   ├── 3blog-pipeline/               ← Content & design
-│   ├── carousel/
+│   ├── carousel/                     ← Design skill
 │   │
 │   ├── seo-implementation-plan/      ← Planning & reporting
 │   ├── seo-final-report/
 │   │
-│   ├── seo-audit/                    ← Specialist skills (13)
+│   ├── seo-audit/                    ← Specialist skills (12)
 │   ├── seo-plan/
 │   │   └── assets/                  ← Industry templates
 │   │       ├── agency.md
@@ -205,9 +203,9 @@ Each skill folder contains a `SKILL.md` that Claude Code reads automatically —
 Skills save reports to a path defined in each client's `CLAUDE.md`:
 ```
 Content & SEO/outputs/{platform}-{handle}/
-  audit/           ← AUDIT-YYYY-MM-DD.md
-  implementation/  ← IMPLEMENTATION-PLAN-*.md, SNAPSHOT-*.md
-  research/        ← GSC-REPORT-*, GA4-REPORT-*
+  audit/           ← AUDIT-YYYY-MM-DD.md, POST-IMPLEMENTATION-REPORT-*.md
+  implementation/  ← SEO-PLAN-*.md, SNAPSHOT-*.md
+  research/        ← GSC-REPORT-*, GA4-REPORT-*, SOCIAL-TRENDS-*
   keywords/        ← KEYWORDS-YYYY-MM-DD.md
   blog-plans/      ← BLOG-PLAN-YYYY-MM-DD.md
   blogs/           ← HTML blog posts
@@ -234,6 +232,6 @@ Restart Claude Code after updating.
 After restarting Claude Code, type any trigger phrase and the skill activates. To verify directly:
 
 ```bash
-ls ~/.claude/skills/    # should show 24 folders
+ls ~/.claude/skills/    # should show 23 folders
 ls ~/.claude/agents/    # should show 6 .md files
 ```

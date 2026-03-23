@@ -2,7 +2,7 @@
 
 > Master reference for all skills, orchestrators, agents, subagents, and commands.
 > Source of truth: `seo-workflow/` — deploy with `bash seo-workflow/install.sh`
-> Last updated: 2026-03-23 (23 skills: 3 orchestrators, 2 data, 1 research, 1 routing plugin, 13 specialists, 1 design, 1 planning, 1 reporting)
+> Last updated: 2026-03-23 (23 skills: 4 orchestrators, 2 data, 1 research, 1 routing plugin, 12 specialists, 1 design, 1 planning, 1 reporting)
 
 ---
 

@@ -899,6 +899,6 @@ When a new platform is added (e.g., Squarespace, Wix, Framer):
 `.skills/skills/<skill-name>/SKILL.md` (fallback)
 `.skills/skills/seo-implementation-plan/SKILL.md`
 `.skills/skills/seo-final-report/SKILL.md`
-`.skills/skills/3blog-pipeline/SKILL.md`
+`.skills/skills/3blog-seo-first-run/SKILL.md`
 `.skills/skills/shopline-onpage-implement/SKILL.md`
 `.skills/skills/webflow-onpage-implement/SKILL.md`
