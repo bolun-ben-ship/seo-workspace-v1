@@ -211,7 +211,7 @@ Content & SEO/outputs/{platform}-{handle}/
   keywords/        ← KEYWORDS-YYYY-MM-DD.md
   blog-plans/      ← BLOG-PLAN-YYYY-MM-DD.md
   blogs/           ← HTML blog posts
-  reports/         ← WEEK-*-REPORT-*, MONTHLY-REPORT-* (from ai-seo-pipeline)
+  reports/         ← WEEK-*-REPORT-*, MONTHLY-AUDIT-PLAN-*, MONTHLY-POST-IMPL-* (from ai-seo-pipeline)
 ```
 
 ---
