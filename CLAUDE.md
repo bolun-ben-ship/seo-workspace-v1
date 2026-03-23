@@ -156,8 +156,8 @@ Update it immediately if any of the following have changed:
 | Change | What to update |
 |---|---|
 | New `.claude/commands/` file added | Add it to the Commands table |
-| New skill added to `seo-workflow/` | Add it to Workspace Structure diagram + SKILLS-REFERENCE.md; run `install.sh` |
-| Skill renamed or significantly changed | Update SKILLS-REFERENCE.md entry immediately |
+| New skill added to `seo-workflow/` | Add it to Workspace Structure diagram + SKILLS-REFERENCE.md + `seo-workflow/README.md`; run `install.sh` |
+| Skill renamed or deleted | Update ALL of: SKILLS-REFERENCE.md, `seo-workflow/README.md`, `seo-workflow/install.sh` (SKILLS array + legacy list), all client CLAUDE.md files, client-template CLAUDE.md, client-template start-client.md, any orchestrator SKILL.md that references the old name in its Sub-skill Reference Paths section |
 | Structural folder changes | Update the Workspace Structure diagram |
 | New agency context files | Document them in `context/` section of the diagram |
 | Client added/removed | Update `clients.md` (not this file — client data lives there) |
@@ -166,6 +166,8 @@ Update it immediately if any of the following have changed:
 **Rule: whenever a skill is created, renamed, or significantly changed → update SKILLS-REFERENCE.md immediately, then run `bash seo-workflow/install.sh`, then CONFIRM to the user that SKILLS-REFERENCE.md has been updated before closing the task.**
 
 **Rule: whenever output filenames or report structures change in a skill → grep `seo-workflow/` and the repo root for the old filenames before closing the task, fix every match, then commit all affected files together.**
+
+**Rule: whenever a skill is renamed or deleted → grep the entire `seo-workflow/` directory for the old skill name and fix every match, including Sub-skill Reference Paths sections in orchestrator SKILL.md files. Also update `seo-workflow/README.md` Skill Index, Manual Install command, and Repo Structure diagram.**
 
 This file is read by `/start-agency` to build the Agency Briefing.
 Keeping it accurate means every new session starts with correct context.
