@@ -39,6 +39,8 @@
 - GSC site: {GSC_SITE_URL or "not yet configured"}
 - GA4 property ID: {GA4_PROPERTY_ID or "not yet configured"}
 - Google credentials: `{CLIENT_SLUG_UPPER}_GOOGLE_KEY` (env var → path to JSON key file)
+  - JSON file lives at: `clients/{CLIENT_SLUG}/{client-slug}-*.json` (gitignored)
+  - Set in `~/.zshrc`: `export {CLIENT_SLUG_UPPER}_GOOGLE_KEY="$HOME/.../clients/{CLIENT_SLUG}/{filename}.json"`
 
 ---
 

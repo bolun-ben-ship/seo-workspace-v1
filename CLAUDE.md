@@ -17,6 +17,7 @@ RightClickAI-seo-workspace/
 ├── clients/                           ← one subfolder per client
 │   └── {domain}/                      ← open THIS in Claude Code when working on a client
 │       ├── CLAUDE.md                  ← client config (platform, handle, token env var)
+│       ├── {client-slug}-*.json       ← Google service account key (per-client, gitignored)
 │       ├── .claude/
 │       │   └── commands/
 │       │       └── start-client.md    ← /start-client command (pre-filled per client)
@@ -174,7 +175,21 @@ Keeping it accurate means every new session starts with correct context.
 
 ---
 
+## Credentials
+
+Each client has their own isolated Google service account key:
+
+- **File location:** `clients/{domain}/{client-slug}-*.json` (inside the client folder)
+- **Env var:** `{CLIENT_SLUG_UPPER}_GOOGLE_KEY` → absolute path to the JSON file (set in `~/.zshrc`)
+- **Naming example:** `AEXPHL_GOOGLE_KEY="$HOME/.../clients/aexphl/aexphl-seo-*.json"`
+- **Never share keys across clients** — each client has their own service account
+- JSON files are gitignored — never committed to the repo
+
+On a new machine: copy each client's JSON key file to `clients/{domain}/` and add the env var to `~/.zshrc`.
+
+---
+
 ## Never
-- Store client tokens or credentials anywhere in this workspace
+- Hardcode tokens or credentials in any output file or skill
 - Edit skills directly in `~/.claude/skills/` — always edit in `seo-workflow/` first
 - Make structural changes without an implementation plan saved to `outputs/`
