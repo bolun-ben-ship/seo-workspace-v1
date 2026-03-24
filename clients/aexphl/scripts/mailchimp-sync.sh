@@ -1,15 +1,30 @@
 #!/bin/bash
 # =============================================================================
 # AEXPHL — Mailchimp Lead Sync
-# Polls Webflow form submissions + Calendly bookings → Mailchimp AEXPHL audience
+# Sources: Webflow forms + Calendly bookings + Monday.com (one-time import)
 #
 # Runs as a scheduled task every hour.
-# State file tracks last sync timestamp to avoid duplicate entries.
+# State file tracks last sync timestamps to avoid duplicates.
 #
-# Requirements:
-#   WEBFLOW_AEXPHL_TOKEN  — in ~/.claude/settings.json env block
-#   MAILCHIMP_API_KEY     — in ~/.claude/settings.json env block
-#   CALENDLY_API_KEY      — in ~/.claude/settings.json env block (optional)
+# Required env vars (both ~/.zshrc AND ~/.claude/settings.json):
+#   WEBFLOW_AEXPHL_TOKEN  — Webflow API
+#   MAILCHIMP_API_KEY     — Mailchimp API
+#
+# Optional (add to activate):
+#   CALENDLY_API_KEY      — Calendly Personal Access Token
+#   MONDAY_API_KEY        — Monday.com API token (for one-time import)
+#
+# Tags applied:
+#   source:webflow-form             — Webflow contactForm submissions
+#   source:calendly                 — all Calendly bookings
+#   calendly:discovery-call         — "Schedule Your Discovery Call"
+#   calendly:borrowing-capacity     — "Check your borrowing capacity or Refinance options"
+#   calendly:next-available         — "Next Available Appointment"
+#   calendly:home-loan-review       — "Your Home Loan review"
+#   calendly:{slugified-name}       — any other event type
+#   source:whatsapp-manychat        — ManyChat completed intake (via native MC integration)
+#   source:monday-import            — historical Monday.com import (one-time)
+#   lead-type:high-intent           — ManyChat leads (completed full intake)
 # =============================================================================
 
 set -euo pipefail
@@ -58,27 +73,36 @@ json.dump(d, open(state_file, 'w'), indent=2)
 "
 }
 
-# --- Add contact to Mailchimp ------------------------------------------------
+# --- Slugify a string into a tag-safe format ---------------------------------
+slugify() {
+  echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//'
+}
+
+# --- Upsert member + apply tags to Mailchimp ---------------------------------
+# Usage: add_to_mailchimp EMAIL FIRST LAST PHONE "tag1,tag2,tag3" NOTES
 add_to_mailchimp() {
   local email="$1"
   local first_name="$2"
   local last_name="$3"
   local phone="$4"
-  local tag="$5"
+  local tags_csv="$5"   # comma-separated list of tags
   local notes="$6"
 
   if [ -z "$email" ] || [ "$email" = "null" ]; then
-    log "  Skipping — no email address"
     return
   fi
 
-  log "  Adding $email to Mailchimp (tag: $tag)..."
+  # Sanitise inputs
+  first_name=$(echo "$first_name" | tr -d '"\\')
+  last_name=$(echo "$last_name" | tr -d '"\\')
+  phone=$(echo "$phone" | tr -d '"\\')
+  notes=$(echo "$notes" | tr -d '"\\' | cut -c1-500)
 
-  # Upsert subscriber (PUT = add or update)
   local email_hash
   email_hash=$(echo -n "${email,,}" | md5)
 
-  local response
+  # --- Step 1: Upsert the member ---
+  local response http_code body
   response=$(curl -s -w "\n%{http_code}" \
     -X PUT \
     --user "anystring:$MAILCHIMP_API_KEY" \
@@ -91,33 +115,45 @@ add_to_mailchimp() {
         \"FNAME\": \"${first_name}\",
         \"LNAME\": \"${last_name}\",
         \"PHONE\": \"${phone}\"
-      },
-      \"tags\": [\"${tag}\"]
+      }
     }")
 
-  local http_code
   http_code=$(echo "$response" | tail -1)
-  local body
   body=$(echo "$response" | head -1)
 
-  if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
-    log "  ✅ Added/updated: $email"
-
-    # Add note if provided
-    if [ -n "$notes" ] && [ "$notes" != "null" ] && [ "$notes" != "" ]; then
-      local member_id
-      member_id=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
-      if [ -n "$member_id" ]; then
-        curl -s -X POST \
-          --user "anystring:$MAILCHIMP_API_KEY" \
-          -H "Content-Type: application/json" \
-          "https://${MAILCHIMP_SERVER}.api.mailchimp.com/3.0/lists/${MAILCHIMP_AUDIENCE_ID}/members/${email_hash}/notes" \
-          -d "{\"note\": \"${notes}\"}" > /dev/null
-      fi
-    fi
-  else
-    log "  ⚠️  Failed ($http_code): $email — $(echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('detail','unknown error'))" 2>/dev/null || echo 'parse error')"
+  if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
+    local err
+    err=$(echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('detail','unknown'))" 2>/dev/null || echo "parse error")
+    log "  ⚠️  Failed ($http_code): $email — $err"
+    return
   fi
+
+  # --- Step 2: Apply tags ---
+  if [ -n "$tags_csv" ] && [ "$tags_csv" != "null" ]; then
+    local tags_json
+    tags_json=$(python3 -c "
+import json, sys
+tags = [t.strip() for t in '$tags_csv'.split(',') if t.strip()]
+payload = {'tags': [{'name': t, 'status': 'active'} for t in tags]}
+print(json.dumps(payload))
+")
+    curl -s -X POST \
+      --user "anystring:$MAILCHIMP_API_KEY" \
+      -H "Content-Type: application/json" \
+      "https://${MAILCHIMP_SERVER}.api.mailchimp.com/3.0/lists/${MAILCHIMP_AUDIENCE_ID}/members/${email_hash}/tags" \
+      -d "$tags_json" > /dev/null
+  fi
+
+  # --- Step 3: Add note if provided ---
+  if [ -n "$notes" ] && [ "$notes" != "null" ]; then
+    curl -s -X POST \
+      --user "anystring:$MAILCHIMP_API_KEY" \
+      -H "Content-Type: application/json" \
+      "https://${MAILCHIMP_SERVER}.api.mailchimp.com/3.0/lists/${MAILCHIMP_AUDIENCE_ID}/members/${email_hash}/notes" \
+      -d "{\"note\": \"${notes}\"}" > /dev/null
+  fi
+
+  log "  ✅ $email → tags: $tags_csv"
 }
 
 # =============================================================================
@@ -126,29 +162,23 @@ add_to_mailchimp() {
 sync_webflow() {
   log "--- Syncing Webflow form submissions ---"
 
-  local last_sync
+  local last_sync now
   last_sync=$(get_last_sync "webflow_last_sync")
+  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   log "Last sync: $last_sync"
 
-  local now
-  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-  # Get all forms for this site
-  local forms_response
+  local forms_response form_ids
   forms_response=$(curl -s \
     -H "Authorization: Bearer $WEBFLOW_AEXPHL_TOKEN" \
     -H "accept-version: 2.0.0" \
     "https://api.webflow.com/v2/sites/${WEBFLOW_SITE_ID}/forms")
 
-  local form_ids
   form_ids=$(echo "$forms_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
-forms = d.get('forms', [])
-# Deduplicate by displayName, keep first of each
 seen = set()
 ids = []
-for f in forms:
+for f in d.get('forms', []):
     name = f.get('displayName','')
     if name not in seen:
         seen.add(name)
@@ -158,6 +188,7 @@ print('\n'.join(ids))
 
   if [ -z "$form_ids" ]; then
     log "No forms found or API error"
+    update_last_sync "webflow_last_sync" "$now"
     return
   fi
 
@@ -165,10 +196,7 @@ print('\n'.join(ids))
 
   while IFS= read -r form_id; do
     [ -z "$form_id" ] && continue
-
-    # Get submissions for this form, paginated
-    local offset=0
-    local limit=100
+    local offset=0 limit=100
 
     while true; do
       local submissions
@@ -179,12 +207,8 @@ print('\n'.join(ids))
 
       local count
       count=$(echo "$submissions" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('formSubmissions', [])))" 2>/dev/null || echo "0")
+      [ "$count" = "0" ] && break
 
-      if [ "$count" = "0" ]; then
-        break
-      fi
-
-      # Process each submission
       echo "$submissions" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -193,35 +217,25 @@ for sub in d.get('formSubmissions', []):
     submitted_at = sub.get('submittedOn', sub.get('createdOn', ''))
     if submitted_at <= last_sync:
         continue
-
     data = sub.get('fieldData', {})
-
-    # Extract fields (handle various field name formats)
-    email = ''
-    first_name = ''
-    last_name = ''
-    phone = ''
+    email = first_name = last_name = phone = ''
     notes_parts = []
-
     for key, val in data.items():
-        key_lower = key.lower()
-        if 'email' in key_lower and not email:
+        kl = key.lower()
+        if 'email' in kl and not email:
             email = str(val) if val else ''
-        elif 'name' in key_lower and 'first' in key_lower:
+        elif 'name' in kl and 'first' in kl:
             first_name = str(val) if val else ''
-        elif 'name' in key_lower and 'last' in key_lower:
+        elif 'name' in kl and 'last' in kl:
             last_name = str(val) if val else ''
-        elif 'name' in key_lower and not first_name and not last_name:
-            # Split full name
+        elif 'name' in kl and not first_name and not last_name:
             parts = str(val).split(' ', 1) if val else ['', '']
             first_name = parts[0]
             last_name = parts[1] if len(parts) > 1 else ''
-        elif 'phone' in key_lower or 'whatsapp' in key_lower:
+        elif 'phone' in kl or 'whatsapp' in kl:
             phone = str(val) if val else ''
-        elif val and val != False:
-            # Collect checkboxes and other fields as notes
+        elif val and val is not False and val != 'false':
             notes_parts.append(f'{key}: {val}')
-
     notes = ' | '.join(notes_parts)
     print(f'{email}|||{first_name}|||{last_name}|||{phone}|||{notes}|||{submitted_at}')
 " 2>/dev/null | while IFS='|||' read -r email first_name last_name phone notes submitted_at; do
@@ -230,24 +244,19 @@ for sub in d.get('formSubmissions', []):
         ((total_added++)) || true
       done
 
-      # Check if there are more pages
       local total
       total=$(echo "$submissions" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('pagination',{}).get('total',0))" 2>/dev/null || echo "0")
-
       offset=$((offset + limit))
-      if [ "$offset" -ge "$total" ]; then
-        break
-      fi
+      [ "$offset" -ge "$total" ] && break
     done
-
   done <<< "$form_ids"
 
   update_last_sync "webflow_last_sync" "$now"
-  log "Webflow sync complete — $total_added new contacts processed"
+  log "Webflow sync complete — $total_added new contacts"
 }
 
 # =============================================================================
-# PART 2 — Calendly Bookings
+# PART 2 — Calendly Bookings (with event type name tagging)
 # =============================================================================
 sync_calendly() {
   if [ -z "${CALENDLY_API_KEY:-}" ]; then
@@ -257,59 +266,65 @@ sync_calendly() {
 
   log "--- Syncing Calendly bookings ---"
 
-  local last_sync
+  local last_sync now
   last_sync=$(get_last_sync "calendly_last_sync")
+  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   log "Last sync: $last_sync"
 
-  local now
-  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-  # Get Calendly user URI first
-  local user_uri
-  user_uri=$(curl -s \
+  # Get organisation URI (needed for team-wide events)
+  local org_uri user_uri
+  local me_response
+  me_response=$(curl -s \
     -H "Authorization: Bearer $CALENDLY_API_KEY" \
-    "https://api.calendly.com/users/me" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(d.get('resource', {}).get('uri', ''))
-" 2>/dev/null || echo "")
+    "https://api.calendly.com/users/me")
+
+  user_uri=$(echo "$me_response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('resource',{}).get('uri',''))" 2>/dev/null || echo "")
+  org_uri=$(echo "$me_response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('resource',{}).get('current_organization',''))" 2>/dev/null || echo "")
 
   if [ -z "$user_uri" ]; then
     log "Failed to get Calendly user URI — check CALENDLY_API_KEY"
     return
   fi
 
-  # Get scheduled events (invitees) since last sync
-  local page_token=""
-  local total_added=0
+  # Use org URI if available (gets all team bookings, not just one user)
+  local scope_param
+  if [ -n "$org_uri" ]; then
+    scope_param="organization=${org_uri}"
+    log "Syncing org-wide bookings (all 3 brokers)"
+  else
+    scope_param="user=${user_uri}"
+  fi
+
+  local page_token="" total_added=0
 
   while true; do
-    local url="https://api.calendly.com/scheduled_events?user=${user_uri}&min_start_time=${last_sync}&count=100&sort=start_time:asc"
+    local url="https://api.calendly.com/scheduled_events?${scope_param}&min_start_time=${last_sync}&count=100&sort=start_time:asc&status=active"
     [ -n "$page_token" ] && url="${url}&page_token=${page_token}"
 
     local events
-    events=$(curl -s \
-      -H "Authorization: Bearer $CALENDLY_API_KEY" \
-      "$url")
+    events=$(curl -s -H "Authorization: Bearer $CALENDLY_API_KEY" "$url")
 
-    local event_uris
-    event_uris=$(echo "$events" | python3 -c "
-import sys, json
+    # Extract event UUID + event type name from each event
+    local event_data
+    event_data=$(echo "$events" | python3 -c "
+import sys, json, re
 d = json.load(sys.stdin)
 for e in d.get('collection', []):
-    print(e.get('uri', ''))
+    uri = e.get('uri', '')
+    uuid = uri.split('/')[-1]
+    name = e.get('name', '')   # Human-readable event type name
+    print(f'{uuid}|||{name}')
 " 2>/dev/null || echo "")
 
-    if [ -z "$event_uris" ]; then
-      break
-    fi
+    [ -z "$event_data" ] && break
 
-    # For each event, get the invitee details
-    while IFS= read -r event_uri; do
-      [ -z "$event_uri" ] && continue
+    while IFS='|||' read -r event_uuid event_name; do
+      [ -z "$event_uuid" ] && continue
 
-      local event_uuid
-      event_uuid=$(basename "$event_uri")
+      # Slugify event name into a tag e.g. "calendly:discovery-call"
+      local event_slug
+      event_slug=$(slugify "$event_name")
+      local event_tag="calendly:${event_slug}"
 
       local invitees
       invitees=$(curl -s \
@@ -325,19 +340,23 @@ for inv in d.get('collection', []):
     parts = name.split(' ', 1)
     first_name = parts[0]
     last_name = parts[1] if len(parts) > 1 else ''
-    event_type = inv.get('event_type', '').split('/')[-1]
-    created_at = inv.get('created_at', '')
-    print(f'{email}|||{first_name}|||{last_name}|||{event_type}|||{created_at}')
-" 2>/dev/null | while IFS='|||' read -r email first_name last_name event_type created_at; do
+    # Pull any custom question answers as notes
+    notes_parts = []
+    for q in inv.get('questions_and_answers', []):
+        question = q.get('question','')
+        answer = q.get('answer','')
+        if answer:
+            notes_parts.append(f'{question}: {answer}')
+    notes = 'Booked: $event_name' + (' | ' + ' | '.join(notes_parts) if notes_parts else '')
+    print(f'{email}|||{first_name}|||{last_name}|||{notes}')
+" 2>/dev/null | while IFS='|||' read -r email first_name last_name notes; do
         [ -z "$email" ] && continue
-        local notes="Calendly booking | Event: $event_type"
-        add_to_mailchimp "$email" "$first_name" "$last_name" "" "source:calendly" "$notes"
+        add_to_mailchimp "$email" "$first_name" "$last_name" "" "source:calendly,${event_tag}" "$notes"
         ((total_added++)) || true
       done
 
-    done <<< "$event_uris"
+    done <<< "$event_data"
 
-    # Check for next page
     local next_page
     next_page=$(echo "$events" | python3 -c "
 import sys, json
@@ -345,14 +364,161 @@ d = json.load(sys.stdin)
 print(d.get('pagination', {}).get('next_page_token', ''))
 " 2>/dev/null || echo "")
 
-    if [ -z "$next_page" ]; then
-      break
-    fi
+    [ -z "$next_page" ] && break
     page_token="$next_page"
   done
 
   update_last_sync "calendly_last_sync" "$now"
-  log "Calendly sync complete — $total_added new contacts processed"
+  log "Calendly sync complete — $total_added new contacts"
+}
+
+# =============================================================================
+# PART 3 — Monday.com Historical Import (one-time, checks state flag)
+# =============================================================================
+sync_monday() {
+  if [ -z "${MONDAY_API_KEY:-}" ]; then
+    log "--- Monday.com sync skipped (MONDAY_API_KEY not set) ---"
+    return
+  fi
+
+  # Only run once unless forced
+  local already_imported
+  already_imported=$(python3 -c "
+import json, os
+try:
+    d = json.load(open('$STATE_FILE'))
+    print(d.get('monday_imported', 'false'))
+except:
+    print('false')
+" 2>/dev/null || echo "false")
+
+  if [ "$already_imported" = "true" ]; then
+    log "--- Monday.com sync skipped (already imported — delete state file to re-run) ---"
+    return
+  fi
+
+  log "--- Monday.com one-time historical import ---"
+
+  # Step 1: Get all boards
+  local boards_response
+  boards_response=$(curl -s \
+    -H "Authorization: $MONDAY_API_KEY" \
+    -H "Content-Type: application/json" \
+    -X POST "https://api.monday.com/v2" \
+    -d '{"query": "{ boards(limit: 50) { id name } }"}')
+
+  log "Boards found:"
+  echo "$boards_response" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+boards = d.get('data', {}).get('boards', [])
+for b in boards:
+    print(f'  {b[\"id\"]} | {b[\"name\"]}')
+" 2>/dev/null | while IFS= read -r line; do log "$line"; done
+
+  # Step 2: Pull items from all boards, look for email columns
+  local total_added=0
+
+  local board_ids
+  board_ids=$(echo "$boards_response" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+boards = d.get('data', {}).get('boards', [])
+print('\n'.join([b['id'] for b in boards]))
+" 2>/dev/null || echo "")
+
+  while IFS= read -r board_id; do
+    [ -z "$board_id" ] && continue
+
+    # Pull items with column values (paginated, 100 at a time)
+    local cursor=""
+    while true; do
+      local cursor_param=""
+      [ -n "$cursor" ] && cursor_param=", cursor: \"${cursor}\""
+
+      local items_response
+      items_response=$(curl -s \
+        -H "Authorization: $MONDAY_API_KEY" \
+        -H "Content-Type: application/json" \
+        -X POST "https://api.monday.com/v2" \
+        -d "{\"query\": \"{ boards(ids: ${board_id}) { items_page(limit: 100${cursor_param}) { cursor items { id name column_values { id text type } } } } }\"}")
+
+      echo "$items_response" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+try:
+    items = d['data']['boards'][0]['items_page']['items']
+except:
+    sys.exit(0)
+
+for item in items:
+    email = ''
+    first_name = ''
+    last_name = ''
+    phone = ''
+    notes_parts = [f'Monday board ID: $board_id']
+
+    for col in item.get('column_values', []):
+        text = col.get('text', '') or ''
+        col_id = col.get('id', '').lower()
+        col_type = col.get('type', '').lower()
+
+        if col_type == 'email' and text and not email:
+            email = text.split(' ')[0]  # Monday sometimes appends label
+        elif col_type == 'phone' and text:
+            phone = text
+        elif 'name' in col_id and text and not first_name:
+            parts = text.split(' ', 1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else ''
+        elif text:
+            notes_parts.append(f'{col_id}: {text}')
+
+    # Fallback: use item name as contact name
+    if not first_name and item.get('name'):
+        parts = item['name'].split(' ', 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ''
+
+    notes = ' | '.join(notes_parts[:8])  # cap notes length
+    print(f'{email}|||{first_name}|||{last_name}|||{phone}|||{notes}')
+" 2>/dev/null | while IFS='|||' read -r email first_name last_name phone notes; do
+          [ -z "$email" ] && continue
+          add_to_mailchimp "$email" "$first_name" "$last_name" "$phone" "source:monday-import" "$notes"
+          ((total_added++)) || true
+        done
+
+      # Check for next page cursor
+      local next_cursor
+      next_cursor=$(echo "$items_response" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+try:
+    print(d['data']['boards'][0]['items_page']['cursor'] or '')
+except:
+    print('')
+" 2>/dev/null || echo "")
+
+      [ -z "$next_cursor" ] || [ "$next_cursor" = "None" ] && break
+      cursor="$next_cursor"
+    done
+
+  done <<< "$board_ids"
+
+  # Mark as imported so it doesn't run again
+  python3 -c "
+import json, os
+state_file = '$STATE_FILE'
+try:
+    d = json.load(open(state_file)) if os.path.exists(state_file) else {}
+except:
+    d = {}
+d['monday_imported'] = 'true'
+json.dump(d, open(state_file, 'w'), indent=2)
+"
+
+  log "Monday.com import complete — $total_added contacts imported"
+  log "Monday.com import will NOT run again automatically (state flag set)"
 }
 
 # =============================================================================
@@ -362,19 +528,12 @@ log "========================================"
 log "AEXPHL Mailchimp Sync — $(date)"
 log "========================================"
 
-# Check required env vars
-if [ -z "${WEBFLOW_AEXPHL_TOKEN:-}" ]; then
-  log "ERROR: WEBFLOW_AEXPHL_TOKEN not set"
-  exit 1
-fi
-
-if [ -z "${MAILCHIMP_API_KEY:-}" ]; then
-  log "ERROR: MAILCHIMP_API_KEY not set"
-  exit 1
-fi
+[ -z "${WEBFLOW_AEXPHL_TOKEN:-}" ] && log "ERROR: WEBFLOW_AEXPHL_TOKEN not set" && exit 1
+[ -z "${MAILCHIMP_API_KEY:-}" ] && log "ERROR: MAILCHIMP_API_KEY not set" && exit 1
 
 sync_webflow
 sync_calendly
+sync_monday
 
 log "========================================"
 log "Sync complete"
