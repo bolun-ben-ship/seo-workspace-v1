@@ -55,6 +55,9 @@ Scheduled tasks running (see Scheduled tab in Claude Code sidebar):
 - noIndex `/landing-page` and `/landing-page-v2` in Webflow Designer
 - 4 schema JSON-LD blocks (see `implementation/IMPLEMENTATION-PLAN-2026-03-23.md` Category F)
 
+**Completed since pipeline launch:**
+- Internal linking — 46 links injected across 17 blog posts (6 published + 11 drafts) on 2026-03-24 via Webflow CMS API. Plan + report: `implementation/INTERNAL-LINKS-PLAN-2026-03-24.md` / `INTERNAL-LINKS-REPORT-2026-03-24.md`
+
 ---
 
 ## Context Loading Rules

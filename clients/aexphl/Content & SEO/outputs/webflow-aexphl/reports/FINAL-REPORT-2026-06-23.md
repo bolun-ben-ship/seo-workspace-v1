@@ -233,8 +233,9 @@ The 4 blog posts targeted in the CTR fix (Phase 2) had the following profiles at
 | Content | Blog category names didn't reflect SEO topical clusters | ✅ 3 categories renamed to align with keyword strategy | 2026-03-19 |
 | Content | Zero blog content targeting foreign income, refinancing, or documents | ✅ 5 new expat-specific posts written and published as drafts | 2026-03-23 |
 | Content | Blog CTR — 7,800 impressions/month generating only 15 clicks | ✅ Meta titles rewritten; impact measurable from May 2026 | 2026-03-20 |
+| Internal Linking | Zero internal links across all 26 blog posts — no topical authority signal passing between posts | ✅ 46 links injected across 17 posts (6 published + 11 pipeline drafts) via Webflow CMS API | 2026-03-24 |
 
-**Total issues resolved: 15 categories** (covering 50+ individual item changes)
+**Total issues resolved: 16 categories** (covering 90+ individual item changes)
 
 ---
 
@@ -248,7 +249,6 @@ Items identified but not yet executed — carried forward from the SNAPSHOT-2026
 | 🔴 CRITICAL | Technical | noIndex /landing-page-v2 in Webflow Designer | Deferred — manual | Same as above |
 | 🔴 HIGH | Schema | 4 JSON-LD schema blocks in Webflow Designer Custom Code | Deferred — manual | Requires Tim to paste in Webflow Designer. All code is ready in IMPLEMENTATION-PLAN-2026-03-23.md — Category F |
 | ⚠️ MED | Technical | HTTP non-www redirect (`http://www.aexphl.com/`) | Deferred — manual | 1,637 GSC impressions on HTTP version. Webflow Hosting settings → confirm HTTP→HTTPS redirect is enabled |
-| ⚠️ MED | On-Page | Internal links in 4 existing blog posts to /calculators + /book-appointment | Deferred | Deferred from pipeline run; can be executed via Webflow CMS API in next session |
 | ⚠️ MED | Content | Location landing pages — /home-loans-singapore, /home-loans-hong-kong, /home-loans-dubai | Not started | Highest organic opportunity gap vs Odin Mortgage. Singapore page is highest priority. |
 | ⚠️ MED | Content | Author bylines on blog posts (Tim, Shaun, Charu) | Not started | Critical YMYL/E-E-A-T requirement for financial content |
 | ⚠️ MED | Schema | Person schema for Tim, Shaun, Charu | Not started | E-E-A-T signal; pairs with author bylines |
@@ -283,7 +283,9 @@ The work executed over the first weeks of this engagement addressed all of those
 
 The content side of the campaign produced five new blog posts targeting the core keyword gaps identified in research: foreign income shading, borrowing capacity for Singapore expats, the documents checklist, RBA rate context, and refinancing from overseas. These are AEXPHL's actual differentiating topics — the knowledge that separates a specialist from a generic broker — and none of them had clear, well-optimised posts before this engagement. All five are in Webflow CMS as drafts, ready for publication.
 
-The site enters the post-engagement period at 61/100 — a 14-point improvement — with clean technical foundations, all title tags keyword-targeted, all meta descriptions crafted, schema in place, and a content pipeline seeded with the right topic areas. The remaining work is known: the Singapore location page, author bylines, the manual schema embed in Webflow Designer, and continued blog output targeting the keyword clusters identified in March. The organic click opportunity from the CTR fixes alone — converting 0.19% to 3% on ~8,400 monthly impressions — represents a potential 15× improvement in organic clicks from the same rankings that already exist.
+Internal linking — the final structural layer — was executed on 2026-03-24: 46 links injected across 17 posts, connecting hub posts (foreign income shading, Singapore borrowing capacity, documents checklist) to their satellite posts and funnelling readers towards /book-appointment and /calculators CTAs. The site had zero internal links between posts before this work. All links are now live in Webflow CMS.
+
+The site enters the post-engagement period at 61/100 — a 14-point improvement — with clean technical foundations, all title tags keyword-targeted, all meta descriptions crafted, schema in place, a full internal linking structure across the blog, and a content pipeline seeded with the right topic areas. The remaining work is known: the Singapore location page, author bylines, the manual schema embed in Webflow Designer, and continued blog output targeting the keyword clusters identified in March. The organic click opportunity from the CTR fixes alone — converting 0.19% to 3% on ~8,400 monthly impressions — represents a potential 15× improvement in organic clicks from the same rankings that already exist.
 
 ---
 
@@ -303,6 +305,8 @@ The site enters the post-engagement period at 61/100 — a 14-point improvement 
 | `implementation/IMPLEMENTATION-PLAN-2026-03-20.md` | 2026-03-20 | Blog CTR fix implementation plan |
 | `implementation/IMPLEMENTATION-PLAN-2026-03-23.md` | 2026-03-23 | AI pipeline initial run implementation plan |
 | `implementation/SNAPSHOT-2026-03-23.md` | 2026-03-23 | Pipeline run snapshot — what was executed |
+| `implementation/INTERNAL-LINKS-PLAN-2026-03-24.md` | 2026-03-24 | Internal linking plan — hub posts, cluster map, 46 link targets |
+| `implementation/INTERNAL-LINKS-REPORT-2026-03-24.md` | 2026-03-24 | Post-execution report — 46 links injected across 17 posts, 0 errors |
 | `blog-plans/BLOG-PLAN-2026-03-23.md` | 2026-03-23 | 5-post blog plan with full briefs |
 | `blogs/rba-rate-hike-march-2026-australian-expats.html` | 2026-03-23 | Blog post — RBA rate hike |
 | `blogs/foreign-income-shading-australian-home-loan.html` | 2026-03-23 | Blog post — Foreign income shading |
