@@ -58,18 +58,50 @@ Read only the files relevant to the task — not all five every time.
 
 ---
 
-## Maintain This File
+## ⚠️ Maintain This File — ALL MASTER FILES
 
-After ANY change to this client workspace, check whether CLAUDE.md needs updating.
-Update it immediately if any of the following have changed:
+After ANY change to this client workspace, check ALL of the following and update immediately:
 
-| Change | What to update |
+### Master files that must stay in sync
+
+| Master File | What it controls | When to update |
+|---|---|---|
+| **This file** (`CLAUDE.md`) | Client config, commands, context rules | Any structural change to this workspace |
+| **`SKILLS-REFERENCE.md`** (agency root) | Full skill library reference | Any skill or command created, renamed, or changed |
+| **`client-template/CLAUDE.md`** (agency root) | Template for new clients | Any time THIS file's structure changes |
+| **`client-template/.claude/commands/start-client.md`** | Template briefing command | Any time start-client logic changes |
+| **`seo-workflow/install.sh`** (agency root) | Skill deployment registry | Any skill added or removed |
+| **Agency `CLAUDE.md`** (agency root) | Agency-level commands table | Any new command added to any client |
+
+### Change → action table
+
+| Change | Files to update |
 |---|---|
-| New `.claude/commands/` file added | Add it to the Commands table |
-| New context files added | Add them to the Context Loading Rules table |
-| Platform or handle changes | Update Platform section |
-| Analytics IDs change | Update Analytics section |
-| Any skill created, renamed, or changed | Update `SKILLS-REFERENCE.md` in agency root immediately, run `install.sh`, confirm to user |
+| New `.claude/commands/` file added | This CLAUDE.md commands table + agency CLAUDE.md + SKILLS-REFERENCE.md |
+| **Command logic changed** (any `.claude/commands/` file) | `SKILLS-REFERENCE.md` entry for that command + `client-template/.claude/commands/` + ALL `clients/*/. claude/commands/` copies + run `install.sh` |
+| New context files added | Context Loading Rules table in this file |
+| Platform or handle changes | Platform section + env var format |
+| Analytics IDs change | Analytics section |
+| Voice & tone rules added | Voice & Tone section |
+| **Any skill created, renamed, or changed** | `SKILLS-REFERENCE.md` + `install.sh` + `client-template/CLAUDE.md` + all client CLAUDE.md files |
+| New output subfolder added by any skill | Output Folder Structure diagram in this file + `client-template/CLAUDE.md` |
+
+### MANDATORY after any command change
+1. Edit `client-template/.claude/commands/{command}.md` (source of truth)
+2. Copy to ALL `clients/*/. claude/commands/{command}.md`
+3. Update `SKILLS-REFERENCE.md` — entry must reflect the change
+4. Run `bash seo-workflow/install.sh` (deploys to `~/.claude/commands/`)
+5. Commit all changed files together
+6. **Confirm to the user:** "SKILLS-REFERENCE.md updated ✅ | all client copies updated ✅ | install.sh deployed ✅"
+
+### MANDATORY after any skill change
+1. Edit in `seo-workflow/{skill}/SKILL.md`
+2. Update `SKILLS-REFERENCE.md` — entry must reflect the change
+3. Update `client-template/CLAUDE.md` if commands, routing, or output folders changed
+4. Update `client-template/.claude/commands/start-client.md` if skill references changed
+5. Update `install.sh` SKILLS array
+6. Run `bash seo-workflow/install.sh`
+7. **Confirm to the user:** "SKILLS-REFERENCE.md updated ✅ | client-template updated ✅ | install.sh deployed ✅"
 
 This file is read by `/start-client` on workspace open.
 Keeping it accurate means every session starts with correct context.

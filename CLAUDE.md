@@ -169,13 +169,16 @@ Update it immediately if any of the following have changed:
 
 | Change | What to update |
 |---|---|
-| New `.claude/commands/` file added | Add it to the Commands table |
+| New `.claude/commands/` file added | Add it to the Commands table + SKILLS-REFERENCE.md |
+| **Command logic changed** (any `.claude/commands/` file) | Update `SKILLS-REFERENCE.md` entry for that command + copy to ALL `clients/*/. claude/commands/` + run `install.sh` + confirm to user |
 | New skill added to `seo-workflow/` | Add it to Workspace Structure diagram + SKILLS-REFERENCE.md + `seo-workflow/README.md`; run `install.sh` |
 | Skill renamed or deleted | Update ALL of: SKILLS-REFERENCE.md, `seo-workflow/README.md`, `seo-workflow/install.sh` (SKILLS array + legacy list), all client CLAUDE.md files, client-template CLAUDE.md, client-template start-client.md, any orchestrator SKILL.md that references the old name in its Sub-skill Reference Paths section |
 | Structural folder changes | Update the Workspace Structure diagram |
 | New agency context files | Document them in `context/` section of the diagram |
 | Client added/removed | Update `clients.md` (not this file — client data lives there) |
 | Output filenames change in any skill | Update ALL of: `SKILLS-REFERENCE.md`, `seo-workflow/README.md`, and this file's Workspace Structure diagram |
+
+**Rule: whenever a command is changed → update SKILLS-REFERENCE.md entry for that command, copy the updated file to ALL `clients/*/. claude/commands/` folders, run `bash seo-workflow/install.sh`, then CONFIRM to the user before closing the task.**
 
 **Rule: whenever a skill is created, renamed, or significantly changed → update SKILLS-REFERENCE.md immediately, then run `bash seo-workflow/install.sh`, then CONFIRM to the user that SKILLS-REFERENCE.md has been updated before closing the task.**
 

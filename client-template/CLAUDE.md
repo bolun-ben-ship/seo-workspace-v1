@@ -106,13 +106,22 @@ After ANY change to this client workspace, check ALL of the following and update
 
 | Change | Files to update |
 |---|---|
-| New `.claude/commands/` file added | This CLAUDE.md commands table + agency CLAUDE.md |
+| New `.claude/commands/` file added | This CLAUDE.md commands table + agency CLAUDE.md + SKILLS-REFERENCE.md |
+| **Command logic changed** (any `.claude/commands/` file) | `SKILLS-REFERENCE.md` entry for that command + `client-template/.claude/commands/` + ALL `clients/*/. claude/commands/` copies + run `install.sh` |
 | New context files added | Context Loading Rules table in this file |
 | Platform or handle changes | Platform section + env var format |
 | Analytics IDs change | Analytics section |
 | Voice & tone rules added | Voice & Tone section |
 | **Any skill created, renamed, or changed** | `SKILLS-REFERENCE.md` + `install.sh` + `client-template/CLAUDE.md` + all client CLAUDE.md files |
 | New output subfolder added by any skill | Output Folder Structure diagram in this file + `client-template/CLAUDE.md` |
+
+### MANDATORY after any command change
+1. Edit `client-template/.claude/commands/{command}.md` (source of truth)
+2. Copy to ALL `clients/*/. claude/commands/{command}.md`
+3. Update `SKILLS-REFERENCE.md` — entry must reflect the change
+4. Run `bash seo-workflow/install.sh` (deploys to `~/.claude/commands/`)
+5. Commit all changed files together
+6. **Confirm to the user:** "SKILLS-REFERENCE.md updated ✅ | all client copies updated ✅ | install.sh deployed ✅"
 
 ### MANDATORY after any skill change
 1. Edit in `seo-workflow/{skill}/SKILL.md`
