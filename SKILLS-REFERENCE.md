@@ -342,7 +342,8 @@ bash seo-workflow/install.sh --audit  # audit only
 | `PERPLEXITY_API_KEY` env var | last30days (all clients except aexphl) |
 | `OPENAI_API_KEY` env var | last30days (aexphl only — `REDDIT_BACKEND=openai` in `.claude/last30days.env`) |
 | `MAILCHIMP_API_KEY` env var | aexphl mailchimp-sync script |
-| `CALENDLY_API_KEY` env var | aexphl mailchimp-sync script (optional — activates Calendly sync) |
+| `CALENDLY_API_KEY` env var | aexphl mailchimp-sync script (activates Calendly sync — token needs `scheduled_events:read` scope) |
+| `MONDAY_API_KEY` env var | aexphl mailchimp-sync script (delta sync of Monday Leads + Customers boards) |
 | Webflow MCP connected (`.mcp.json`) | webflow-onpage-implement |
 | Python packages: `google-analytics-data`, `google-api-python-client`, `google-auth`, `requests` | gsc-report, ga4-report |
 | Python scripts from `github.com/mvanhorn/last30days-skill` | last30days |
@@ -357,9 +358,16 @@ Standalone scripts that run as scheduled tasks outside the SEO pipeline.
 ### `aexphl` — Mailchimp Lead Sync
 **Script:** `clients/aexphl/scripts/mailchimp-sync.sh`
 **Scheduled task:** `aexphl-mailchimp-sync` (every hour)
-**What it does:** Polls Webflow form submissions + Calendly bookings since last run → upserts contacts into Mailchimp AEXPHL audience (`bba8715471`) with source tags.
-**Tags:** `source:webflow-form`, `source:calendly`
-**State:** `scripts/mailchimp-sync-state.json` — tracks last sync timestamps (no duplicates)
+**What it does:** 4-source sync → Mailchimp AEXPHL audience (`bba8715471`):
+  1. **Webflow forms** — new submissions since last run → `source:webflow`
+  2. **Calendly bookings** — all active bookings since last run → `source:calendly`, `event:*`, `broker:*`, populates PHONE/LOCATION/MEETDATE/SERVICES from invitee data
+  3. **Monday Leads board** — delta sync (owner-filtered: Shaun + Tim only) → `source:monday-import`, `monday:lead`, `monday-status:*`, `broker:*`
+  4. **Monday Customers board** — delta sync (all entries) → `source:monday-import`, `monday:customer`
+
+**Deduplication:** PUT upsert on email hash — all sources merge safely. Empty fields never overwrite existing data.
+**State:** `scripts/mailchimp-sync-state.json` — tracks `webflow_last_sync`, `calendly_last_sync`, `monday_last_sync`
 **Log:** `scripts/mailchimp-sync.log`
 **Required env vars:** `WEBFLOW_AEXPHL_TOKEN`, `MAILCHIMP_API_KEY` (both in settings.json ✅)
-**Optional:** `CALENDLY_API_KEY` — add to activate Calendly sync (see aexphl CLAUDE.md)
+**Optional:** `CALENDLY_API_KEY` (active ✅), `MONDAY_API_KEY` (active ✅) — both in settings.json
+**Merge fields:** FNAME, LNAME, PHONE, WHATSAPP, SERVICES, LEADSTAT, LOCATION, CAMPAIGN, LSOURCE, EMPLOY, IMMIGR, BROKER, COUNTRY, AGE, MARITAL, JOBTITLE, INCOME, CUSTTYPE, MEETDATE
+**To force full Monday re-sync:** Set `monday_last_sync` to `"2020-01-01T00:00:00Z"` in state JSON

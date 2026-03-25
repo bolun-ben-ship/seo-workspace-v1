@@ -65,7 +65,7 @@ Scheduled tasks running (see Scheduled tab in Claude Code sidebar):
 - `aexphl-monthly-onpage` — 23rd of each month 9am, full audit + on-page execution
 - `aexphl-week1-report` — one-off 2026-03-30
 - `aexphl-final-report` — one-off 2026-06-23
-- `aexphl-mailchimp-sync` — every hour, syncs Webflow form submissions + Calendly bookings → Mailchimp
+- `aexphl-mailchimp-sync` — every hour, syncs Webflow forms + Calendly bookings + Monday CRM delta → Mailchimp
 
 **Required:** `~/.claude/settings.json` must have `Bash`, `Read`, `Write`, `Edit`, `WebSearch`, `WebFetch` in `permissions.allow` — otherwise tasks will prompt for approval on every run.
 
@@ -75,7 +75,7 @@ Scheduled tasks running (see Scheduled tab in Claude Code sidebar):
 
 **Completed since pipeline launch:**
 - Internal linking — 46 links injected across 17 blog posts (6 published + 11 drafts) on 2026-03-24 via Webflow CMS API. Plan + report: `implementation/INTERNAL-LINKS-PLAN-2026-03-24.md` / `INTERNAL-LINKS-REPORT-2026-03-24.md`
-- Mailchimp lead sync — set up 2026-03-24, syncing Webflow forms + Calendly to AEXPHL audience (ID: `bba8715471`)
+- Mailchimp lead sync — set up 2026-03-24; upgraded 2026-03-25 to full 4-source sync: Webflow forms + Calendly (all bookings, phone/location/event populated) + Monday delta sync (ongoing, not one-time) + deduplication by email hash. Audience ID: `bba8715471`
 
 ---
 
@@ -88,27 +88,51 @@ Scheduled tasks running (see Scheduled tab in Claude Code sidebar):
 - **Scheduled task:** `aexphl-mailchimp-sync` (hourly)
 
 **Tags applied:**
-- `source:webflow-form` — Webflow contactForm submissions
-- `source:calendly` + `calendly:{event-type}` — Calendly bookings, tagged by event name
-  - `calendly:discovery-call`, `calendly:borrowing-capacity`, `calendly:next-available`, etc.
+- `source:webflow` — Webflow contactForm submissions
+- `source:calendly` — all Calendly bookings
+  - `event:borrowing-cap` — "Check your borrowing capacity or Refinance options"
+  - `event:next-available` — "Next Available Appointment"
+  - `event:discovery-call` — "Schedule Your Discovery Call"
+  - `event:loan-consult` — "Loan Consultation" (broker-specific)
+  - `event:{slugified-name}` — any other event type
+  - `broker:shaun` / `broker:tim` / `broker:charu` — who they booked with
 - `source:whatsapp-manychat` + `lead-type:high-intent` — ManyChat completed intake (native MC integration)
-- `source:monday-import` + `monday:lead` + `monday-status:{status}` — Monday.com Leads board (1,164 items)
-- `source:monday-import` + `monday:customer` — Monday.com Customers board (801 items)
+- `source:monday-import` — all Monday.com imports (ongoing delta sync)
+  - `monday:lead` + `monday-status:{status}` — from Leads board
+  - `monday:customer` — from Customers board
+  - `broker:shaun` / `broker:tim` — lead owner (Leads board only)
 
-**Monday.com boards mapped (2026-03-24):**
-- `1907973121` Leads (1,164) → imports with lead status tag
-- `1917616922` Customers (801) → imports with employment/immigration data as notes
-- `1917636634` Referrers (30) → **SKIPPED** (referral partners, not leads)
+**Merge fields populated (created 2026-03-24, extended 2026-03-25):**
+- `FNAME`, `LNAME`, `PHONE` — standard fields (never overwritten with blank)
+- `WHATSAPP` — WhatsApp number (from Monday Leads / Webflow)
+- `SERVICES` — Interested services or event type booked
+- `LEADSTAT` — Lead status (from Monday Leads)
+- `LOCATION` — Country / region (from Calendly Q&A + Monday Leads)
+- `CAMPAIGN` — Campaign source (from Monday Leads)
+- `LSOURCE` — Lead capture source (calendly / webflow / monday)
+- `EMPLOY` — Employment status (from Monday Customers)
+- `IMMIGR` — Immigration status (from Monday Customers)
+- `BROKER` — Assigned broker name
+- `COUNTRY` — Country of residence (from Monday Customers)
+- `AGE` — Age (from Monday Customers)
+- `MARITAL` — Marital status (from Monday Customers)
+- `JOBTITLE` — Job title (from Monday Customers)
+- `INCOME` — Annual income AUD (from Monday Customers)
+- `CUSTTYPE` — Customer type e.g. High Net Worth (from Monday Customers)
+- `MEETDATE` — Original booking / meeting date
+
+**Monday.com boards mapped:**
+- `1907973121` Leads — owner-filtered (Shaun Rattray + Tim Raes only), delta sync hourly
+- `1917616922` Customers — all entries, delta sync hourly
+- `1917636634` Referrers → **SKIPPED** (referral partners, not leads)
 - All other boards → **SKIPPED** (operational/internal)
 
-**To activate Calendly sync:**
-1. Get Personal Access Token from [app.calendly.com/integrations/api_webhooks](https://app.calendly.com/integrations/api_webhooks)
-2. Add to `~/.zshrc`: `export CALENDLY_API_KEY="your-token"`
-3. Add to `~/.claude/settings.json` env block: `"CALENDLY_API_KEY": "your-token"`
-4. Restart Claude Code — sync activates automatically on next hourly run
+**Deduplication:** All sources use Mailchimp PUT upsert on email hash — duplicates across Monday, Calendly, and Webflow automatically merge on the same contact record. Empty fields are never sent, so existing data is never overwritten with blank.
 
-**To re-run Monday.com import** (if needed):
-Delete `monday_imported` key from `scripts/mailchimp-sync-state.json`, then trigger the sync.
+**Calendly API note:** Token requires `scheduled_events:read` scope (not `users:read`). User URI hardcoded as `ACGBPK2OIQ3QPH3G` (decoded from JWT). Token set in both `~/.zshrc` and `~/.claude/settings.json`.
+
+**To force full re-sync of Monday:**
+Set `monday_last_sync` to `"2020-01-01T00:00:00Z"` in `scripts/mailchimp-sync-state.json`, then trigger the sync.
 
 ---
 

@@ -6,6 +6,13 @@
       "env": {
         "WEBFLOW_TOKEN": "${WEBFLOW_AEXPHL_TOKEN}"
       }
+    },
+    "mailchimp": {
+      "command": "npx",
+      "args": ["-y", "@mailchimp/mcp-server@latest"],
+      "env": {
+        "MAILCHIMP_API_KEY": "${MAILCHIMP_API_KEY}"
+      }
     }
   }
 }
