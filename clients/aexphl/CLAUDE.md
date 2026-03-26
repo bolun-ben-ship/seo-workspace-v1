@@ -103,7 +103,7 @@ Scheduled tasks running (see Scheduled tab in Claude Code sidebar):
   - `broker:shaun` / `broker:tim` — lead owner (Leads board only)
 
 **Merge fields populated (created 2026-03-24, extended 2026-03-25):**
-- `FNAME`, `LNAME`, `PHONE` — standard fields (never overwritten with blank)
+- `FNAME`, `LNAME`, `PHONE` — standard fields. **PHONE is always sent explicitly (even as empty string) to overwrite any previously corrupted values.** Never skip PHONE in the merge payload — omitting it leaves garbage in place.
 - `WHATSAPP` — WhatsApp number (from Monday Leads / Webflow)
 - `SERVICES` — Interested services or event type booked
 - `LEADSTAT` — Lead status (from Monday Leads)
@@ -127,12 +127,32 @@ Scheduled tasks running (see Scheduled tab in Claude Code sidebar):
 - `1917636634` Referrers → **SKIPPED** (referral partners, not leads)
 - All other boards → **SKIPPED** (operational/internal)
 
-**Deduplication:** All sources use Mailchimp PUT upsert on email hash — duplicates across Monday, Calendly, and Webflow automatically merge on the same contact record. Empty fields are never sent, so existing data is never overwritten with blank.
+**Deduplication:** All sources use Mailchimp PUT upsert on email hash — duplicates across Monday, Calendly, and Webflow automatically merge on the same contact record.
+
+**Field write rules:**
+- Empty string fields (non-PHONE) are NOT sent — existing data is never overwritten with blank
+- `PHONE` is ALWAYS sent (even as empty string) — this actively clears any garbage values from prior runs
+- Real phone numbers only go to PHONE if they contain at least one digit
+
+**Data quality as of 2026-03-26 (after cleanup):**
+
+| Segment | Contacts | FNAME | LNAME | PHONE | COUNTRY |
+|---|---|---|---|---|---|
+| `monday:customer` | 592 | 100% | 97% | 28% | 33% |
+| `monday:lead` only | 84 | 100% | 95% | 0% | 0% |
+| `source:calendly` | 91 | 31% | 30% | 0% | 5% |
+
+Low phone/country fill rates reflect sparse data in Monday — not a script issue.
+Calendly name fill rate is low because most bookings don't capture full name in the form.
+
+**Cleanup script:** `scripts/mailchimp-cleanup.py` — run if merge field corruption is ever suspected. Pulls fresh data from Monday, fixes garbled PHONE fields, populates FNAME/LNAME/COUNTRY where missing. Safe to re-run any time.
+
+**Google Ads Customer Match CSV:** `scripts/google-ads-customer-match.csv` — 592 customer rows with full name + phone/country where available. Regenerate after any major sync or cleanup by running the generation script at the bottom of mailchimp-cleanup.py (or manually via the Mailchimp API).
 
 **Calendly API note:** Token requires `scheduled_events:read` scope (not `users:read`). User URI hardcoded as `ACGBPK2OIQ3QPH3G` (decoded from JWT). Token set in both `~/.zshrc` and `~/.claude/settings.json`.
 
 **To force full re-sync of Monday:**
-Set `monday_last_sync` to `"2020-01-01T00:00:00Z"` in `scripts/mailchimp-sync-state.json`, then trigger the sync.
+Set `monday_last_sync` to `"2020-01-01T00:00:00Z"` in `scripts/mailchimp-sync-state.json`, then run `bash scripts/mailchimp-sync.sh`. This re-processes all Monday records and overwrites Mailchimp with fresh data (including clearing any PHONE corruption).
 
 ---
 
