@@ -153,7 +153,28 @@ add_to_mailchimp() {
   _mf=$(mktemp /tmp/mc_mf.XXXXXX)
   printf '%s' "${merge_extra:-{}}" > "$_mf"
   export _MCF="$first_name" _MCL="$last_name" _MCP="$phone" _MCEF="$_mf"
-  merge_json=$(python3 -c "import json,os; d=json.load(open(os.environ['_MCEF'])); b={}; [b.update({k:v}) for k,v in [('FNAME',os.environ.get('_MCF','')),('LNAME',os.environ.get('_MCL','')),('PHONE',os.environ.get('_MCP',''))] if v and str(v) not in ('','null','None')]; [b.update({k:v}) for k,v in d.items() if v and str(v) not in ('','null','None')]; print(json.dumps(b))" 2>/dev/null || echo '{}')
+  # Always include FNAME, LNAME, PHONE explicitly (even as empty string) so re-syncs
+  # overwrite any previously corrupted values rather than leaving garbage in place.
+  merge_json=$(python3 -c "
+import json, os
+d = json.load(open(os.environ['_MCEF']))
+b = {}
+# Standard fields: always set if non-empty, always clear if empty (to fix corruption)
+fname = os.environ.get('_MCF', '')
+lname = os.environ.get('_MCL', '')
+phone = os.environ.get('_MCP', '')
+if fname and fname not in ('null', 'None'): b['FNAME'] = fname
+if lname and lname not in ('null', 'None'): b['LNAME'] = lname
+# PHONE: always send — real number if available, empty string to clear garbage
+def has_digits(s): return any(c.isdigit() for c in s)
+if phone and has_digits(phone): b['PHONE'] = phone
+else: b['PHONE'] = ''
+# Extra merge fields: only send non-empty values
+for k, v in d.items():
+    if v and str(v) not in ('', 'null', 'None'):
+        b[k] = v
+print(json.dumps(b))
+" 2>/dev/null || echo '{}')
   rm -f "$_mf"
   unset _MCF _MCL _MCP _MCEF
 
