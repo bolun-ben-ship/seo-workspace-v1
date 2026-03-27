@@ -89,7 +89,7 @@ Pages with >200 impressions and <2% CTR — meta title/description fix opportuni
 
 ### 6. Month-over-Month (if prior report exists)
 Check `<OUTPUTS_PATH>/research/` for previous files:
-- `GSC-REPORT-YYYY-MM-DD.md` (preferred)
+- `GSC-REPORT-YYYY-MM-DD.pdf` (preferred)
 - `PERFORMANCE-REPORT-YYYY-MM-DD.md` (fallback)
 
 Load the most recent. If found, compare: clicks, impressions, avg position, top query movements.
@@ -102,5 +102,37 @@ mkdir -p "<OUTPUTS_PATH>/research"
 
 Save to: `<OUTPUTS_PATH>/research/GSC-REPORT-YYYY-MM-DD.md` (use today's date).
 Never overwrite an existing file.
+
+## Step 5 — Convert to PDF
+
+Run this Python script via Bash to convert the saved markdown to PDF:
+
+```python
+import subprocess, sys, os
+subprocess.run([sys.executable, '-m', 'pip', 'install', 'markdown', '-q'], capture_output=True)
+import markdown as md_lib
+
+md_path = "<OUTPUTS_PATH>/research/GSC-REPORT-YYYY-MM-DD.md"  # ← set to the actual path written above
+html_path = md_path[:-3] + "_tmp.html"
+pdf_path  = md_path[:-3] + ".pdf"
+
+with open(md_path) as f:
+    body = f.read()
+html_body = md_lib.markdown(body, extensions=["tables", "fenced_code"])
+html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:920px;margin:40px auto;padding:0 48px;color:#1a1a2e;line-height:1.65}}h1{{font-size:2em;border-bottom:3px solid #e0e0e8;padding-bottom:12px}}h2{{font-size:1.4em;color:#2d2d50;border-bottom:1px solid #eee;padding-bottom:6px;margin-top:36px}}h3{{color:#444;margin-top:24px}}table{{border-collapse:collapse;width:100%;margin:16px 0;font-size:.9em}}th{{background:#f0f0f8;font-weight:600;padding:10px 14px;border:1px solid #d0d0e0}}td{{padding:8px 14px;border:1px solid #d0d0e0}}tr:nth-child(even){{background:#f8f8fc}}code{{background:#f4f4f8;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:.88em}}pre{{background:#f4f4f8;padding:16px;border-radius:6px}}pre code{{background:none;padding:0}}hr{{border:none;border-top:2px solid #eee;margin:28px 0}}</style>
+</head><body>{html_body}</body></html>"""
+with open(html_path, "w") as f:
+    f.write(html)
+chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header",
+                html_path], check=True, capture_output=True)
+os.remove(html_path)
+os.remove(md_path)
+print(f"✅ PDF saved: {pdf_path}")
+```
+
+Save to: `<OUTPUTS_PATH>/research/GSC-REPORT-YYYY-MM-DD.pdf`
 
 After saving, display key findings inline in chat.

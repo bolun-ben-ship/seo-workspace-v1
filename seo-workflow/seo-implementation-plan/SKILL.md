@@ -43,14 +43,14 @@ This skill does NOT execute regardless of platform. Platform is detected solely 
 ```
 Content & SEO/outputs/{platform}-{handle}/
 └── implementation/
-    └── IMPLEMENTATION-PLAN-YYYY-MM-DD.md   ← the complete before/after plan
+    └── IMPLEMENTATION-PLAN-YYYY-MM-DD.pdf   ← the complete before/after plan
 ```
 
 Also refreshes:
 ```
-research/GSC-REPORT-YYYY-MM-DD.md
-research/GA4-REPORT-YYYY-MM-DD.md
-research/SOCIAL-TRENDS-YYYY-MM-DD.md
+research/GSC-REPORT-YYYY-MM-DD.pdf
+research/GA4-REPORT-YYYY-MM-DD.pdf
+research/SOCIAL-TRENDS-YYYY-MM-DD.pdf
 ```
 
 ---
@@ -72,11 +72,11 @@ Also read `context/client-info.md` for the primary niche/topic (used for last30d
 Check `Content & SEO/outputs/{platform}-{handle}/` for prior reports.
 Sort by YYYY-MM-DD descending, load newest per category:
 
-1. `audit/POST-IMPLEMENTATION-AUDIT-*.md` — current SEO score, all ✅ resolved items
-2. `audit/AUDIT-*.md` — baseline audit (fallback)
-3. `implementation/IMPLEMENTATION-PLAN-*.md` or `SEO-PLAN-*.md` — prior plan
-4. `implementation/SHOPLINE-SNAPSHOT-*.md` or `WEBFLOW-SNAPSHOT-*.md` — prior CMS state
-5. `research/GSC-REPORT-*.md` + `GA4-REPORT-*.md` — prior performance baseline
+1. `audit/POST-IMPLEMENTATION-AUDIT-*.pdf` — current SEO score, all ✅ resolved items
+2. `audit/AUDIT-*.pdf` — baseline audit (fallback)
+3. `implementation/IMPLEMENTATION-PLAN-*.pdf` or `SEO-PLAN-*.pdf` — prior plan
+4. `implementation/SHOPLINE-SNAPSHOT-*.pdf` or `WEBFLOW-SNAPSHOT-*.pdf` — prior CMS state
+5. `research/GSC-REPORT-*.pdf` + `GA4-REPORT-*.pdf` — prior performance baseline
 
 **Build HISTORICAL_CONTEXT:**
 ```
@@ -107,7 +107,7 @@ Announce what was found:
 - Schema: structured data detection and recommendations
 - Produce health score (0–100) + prioritised action list
 - `mkdir -p` audit/ before saving
-- **Save to:** `audit/AUDIT-YYYY-MM-DD.md`
+- **Save to:** `audit/AUDIT-YYYY-MM-DD.md` then convert to PDF (see PDF conversion pattern below)
 
 If skipping fresh audit: load existing audit into context as the baseline.
 
@@ -119,17 +119,17 @@ If skipping fresh audit: load existing audit into context as the baseline.
 Pull 30-day data using credentials from CLAUDE.md:
 - Top queries by impressions, CTR, position
 - CTR gap opportunities: position ≤10, CTR <3%
-- **Save to:** `research/GSC-REPORT-YYYY-MM-DD.md`
+- **Save to:** `research/GSC-REPORT-YYYY-MM-DD.md` then convert to PDF (see PDF conversion pattern below)
 
 **3b — GA4 Data**
 Pull 30-day data:
 - Sessions by channel, top landing pages, bounce rates
-- **Save to:** `research/GA4-REPORT-YYYY-MM-DD.md`
+- **Save to:** `research/GA4-REPORT-YYYY-MM-DD.md` then convert to PDF (see PDF conversion pattern below)
 
 **3c — Market Research (last30days)**
 Research the client's primary niche:
 - Top content themes, trending questions, competitor angles
-- **Save to:** `research/SOCIAL-TRENDS-YYYY-MM-DD.md`
+- **Save to:** `research/SOCIAL-TRENDS-YYYY-MM-DD.md` then convert to PDF (see PDF conversion pattern below)
 
 If credentials not configured in CLAUDE.md: skip 3a/3b, note it in the plan.
 
@@ -216,7 +216,7 @@ Always include this section. Users need to know what requires manual work.
 ## Phase 5: Save and Present
 
 `mkdir -p` implementation/ before saving.
-**Save to:** `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md`
+**Save to:** `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md` then convert to PDF using the pattern below.
 
 End the plan document with:
 ```
@@ -228,6 +228,36 @@ End the plan document with:
 - Manual actions required:        X items (Category G)
 - Items carried from prior plan:  X (from [date])
 - Resolved items NOT re-recommended: X
+```
+
+### PDF Conversion Pattern
+
+After each "Save to:" step above, run this Python script via Bash (set `md_path` to the actual path just written):
+
+```python
+import subprocess, sys, os
+subprocess.run([sys.executable, '-m', 'pip', 'install', 'markdown', '-q'], capture_output=True)
+import markdown as md_lib
+
+md_path = "<THE_EXACT_PATH_WRITTEN_ABOVE>"  # ← set to the actual path
+html_path = md_path[:-3] + "_tmp.html"
+pdf_path  = md_path[:-3] + ".pdf"
+
+with open(md_path) as f:
+    body = f.read()
+html_body = md_lib.markdown(body, extensions=["tables", "fenced_code"])
+html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:920px;margin:40px auto;padding:0 48px;color:#1a1a2e;line-height:1.65}}h1{{font-size:2em;border-bottom:3px solid #e0e0e8;padding-bottom:12px}}h2{{font-size:1.4em;color:#2d2d50;border-bottom:1px solid #eee;padding-bottom:6px;margin-top:36px}}h3{{color:#444;margin-top:24px}}table{{border-collapse:collapse;width:100%;margin:16px 0;font-size:.9em}}th{{background:#f0f0f8;font-weight:600;padding:10px 14px;border:1px solid #d0d0e0}}td{{padding:8px 14px;border:1px solid #d0d0e0}}tr:nth-child(even){{background:#f8f8fc}}code{{background:#f4f4f8;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:.88em}}pre{{background:#f4f4f8;padding:16px;border-radius:6px}}pre code{{background:none;padding:0}}hr{{border:none;border-top:2px solid #eee;margin:28px 0}}</style>
+</head><body>{html_body}</body></html>"""
+with open(html_path, "w") as f:
+    f.write(html)
+chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header",
+                html_path], check=True, capture_output=True)
+os.remove(html_path)
+os.remove(md_path)
+print(f"✅ PDF saved: {pdf_path}")
 ```
 
 **Present in chat:** a concise summary table (top 10 changes), then say:

@@ -43,18 +43,48 @@ mkdir -p "Content & SEO/outputs/<domain>/audit"
 mkdir -p "Content & SEO/outputs/<domain>/implementation"
 ```
 
-- `Content & SEO/outputs/<domain>/audit/AUDIT-YYYY-MM-DD.md` — Comprehensive findings (use today's date)
-- `Content & SEO/outputs/<domain>/implementation/SEO-PLAN-YYYY-MM-DD.md` — Prioritized recommendations (Critical → High → Medium → Low)
+- `Content & SEO/outputs/<domain>/audit/AUDIT-YYYY-MM-DD.pdf` — Comprehensive findings (use today's date)
+- `Content & SEO/outputs/<domain>/implementation/SEO-PLAN-YYYY-MM-DD.pdf` — Prioritized recommendations (Critical → High → Medium → Low)
 - `screenshots/` — Desktop + mobile captures (if Playwright available)
 
 Never overwrite prior files — always use today's date in the filename.
 
+### PDF Conversion
+
+After writing each output file (AUDIT and SEO-PLAN), write first as `.md` then convert using this Python script:
+
+```python
+import subprocess, sys, os
+subprocess.run([sys.executable, '-m', 'pip', 'install', 'markdown', '-q'], capture_output=True)
+import markdown as md_lib
+
+md_path = "<THE_EXACT_PATH_WRITTEN_ABOVE>"  # ← set to the actual path
+html_path = md_path[:-3] + "_tmp.html"
+pdf_path  = md_path[:-3] + ".pdf"
+
+with open(md_path) as f:
+    body = f.read()
+html_body = md_lib.markdown(body, extensions=["tables", "fenced_code"])
+html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:920px;margin:40px auto;padding:0 48px;color:#1a1a2e;line-height:1.65}}h1{{font-size:2em;border-bottom:3px solid #e0e0e8;padding-bottom:12px}}h2{{font-size:1.4em;color:#2d2d50;border-bottom:1px solid #eee;padding-bottom:6px;margin-top:36px}}h3{{color:#444;margin-top:24px}}table{{border-collapse:collapse;width:100%;margin:16px 0;font-size:.9em}}th{{background:#f0f0f8;font-weight:600;padding:10px 14px;border:1px solid #d0d0e0}}td{{padding:8px 14px;border:1px solid #d0d0e0}}tr:nth-child(even){{background:#f8f8fc}}code{{background:#f4f4f8;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:.88em}}pre{{background:#f4f4f8;padding:16px;border-radius:6px}}pre code{{background:none;padding:0}}hr{{border:none;border-top:2px solid #eee;margin:28px 0}}</style>
+</head><body>{html_body}</body></html>"""
+with open(html_path, "w") as f:
+    f.write(html)
+chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header",
+                html_path], check=True, capture_output=True)
+os.remove(html_path)
+os.remove(md_path)
+print(f"✅ PDF saved: {pdf_path}")
+```
+
 ## Historical Context Check (run before auditing)
 
 Before starting the audit, check `Content & SEO/outputs/<domain>/audit/` for existing files:
-- Load the most recent `POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md` if present (highest priority)
-- Load the most recent `AUDIT-YYYY-MM-DD.md` as fallback/supplement
-- Also load the most recent `implementation/SEO-PLAN-YYYY-MM-DD.md`
+- Load the most recent `POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf` if present (highest priority)
+- Load the most recent `AUDIT-YYYY-MM-DD.pdf` as fallback/supplement
+- Also load the most recent `implementation/SEO-PLAN-YYYY-MM-DD.pdf`
 
 If prior reports exist:
 - Do NOT re-flag items already marked ✅ as resolved

@@ -94,27 +94,27 @@ This table governs every execution decision in this skill:
 ```
 Content & SEO/outputs/{platform}-{handle}/
 ├── audit/
-│   ├── AUDIT-YYYY-MM-DD.md
-│   ├── POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md
-│   └── FINAL-REPORT-YYYY-MM-DD.md
+│   ├── AUDIT-YYYY-MM-DD.pdf
+│   ├── POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf
+│   └── FINAL-REPORT-YYYY-MM-DD.pdf
 ├── research/
-│   ├── GSC-REPORT-YYYY-MM-DD.md
-│   ├── GA4-REPORT-YYYY-MM-DD.md
-│   └── SOCIAL-TRENDS-YYYY-MM-DD.md
+│   ├── GSC-REPORT-YYYY-MM-DD.pdf
+│   ├── GA4-REPORT-YYYY-MM-DD.pdf
+│   └── SOCIAL-TRENDS-YYYY-MM-DD.pdf
 ├── keywords/
-│   └── KEYWORDS-YYYY-MM-DD.md
+│   └── KEYWORDS-YYYY-MM-DD.pdf
 ├── implementation/
-│   ├── IMPLEMENTATION-PLAN-YYYY-MM-DD.md
-│   └── SNAPSHOT-YYYY-MM-DD.md
+│   ├── IMPLEMENTATION-PLAN-YYYY-MM-DD.pdf
+│   └── SNAPSHOT-YYYY-MM-DD.pdf
 ├── blog-plans/
-│   └── BLOG-PLAN-YYYY-MM-DD.md
+│   └── BLOG-PLAN-YYYY-MM-DD.pdf
 ├── blogs/
 │   └── <post-slug>.html
 └── reports/
-    ├── WEEK-1-REPORT-YYYY-MM-DD.md
-    ├── MONTHLY-AUDIT-PLAN-YYYY-MM.md     ← Report 1: combined audit + implementation plan (before execution)
-    ├── MONTHLY-POST-IMPL-YYYY-MM.md      ← Report 2: post-implementation comparison (after execution)
-    └── FINAL-REPORT-YYYY-MM-DD.md
+    ├── WEEK-1-REPORT-YYYY-MM-DD.pdf
+    ├── MONTHLY-AUDIT-PLAN-YYYY-MM.pdf     ← Report 1: combined audit + implementation plan (before execution)
+    ├── MONTHLY-POST-IMPL-YYYY-MM.pdf      ← Report 2: post-implementation comparison (after execution)
+    └── FINAL-REPORT-YYYY-MM-DD.pdf
 ```
 
 ---
@@ -218,9 +218,9 @@ Run immediately (or on first manual trigger if START_NOW = false).
 ### Step 1b — Full Research (run in parallel)
 
 All three simultaneously:
-- **SEO Audit** (if needed) → `audit/AUDIT-YYYY-MM-DD.md`
-- **GSC + GA4** → `research/GSC-REPORT-*.md` + `research/GA4-REPORT-*.md`
-- **last30days** for PRIMARY_NICHE → `research/SOCIAL-TRENDS-*.md`
+- **SEO Audit** (if needed) → `audit/AUDIT-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
+- **GSC + GA4** → `research/GSC-REPORT-*.md` + `research/GA4-REPORT-*.md` then convert to PDF
+- **last30days** for PRIMARY_NICHE → `research/SOCIAL-TRENDS-*.md` then convert to PDF
 
 ### Step 1c — Keyword Research
 
@@ -230,12 +230,12 @@ All three simultaneously:
 3. Long-tail informational
 4. PAA + AI search queries
 
-**Save to:** `keywords/KEYWORDS-YYYY-MM-DD.md`
+**Save to:** `keywords/KEYWORDS-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 ### Step 1d — Initial Implementation Plan
 
 Run full `seo-implementation-plan` logic (Categories A–G, before/after for every change).
-**Save to:** `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md`
+**Save to:** `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 ### Step 1e — Initial Blog Plan (5 posts for Week 1)
 
@@ -243,7 +243,7 @@ Run full `seo-implementation-plan` logic (Categories A–G, before/after for eve
 - No overlap with prior topics
 - Mix informational + transactional intent
 - Assign to BLOG_DESTINATION (or rotate)
-- **Save to:** `blog-plans/BLOG-PLAN-YYYY-MM-DD.md`
+- **Save to:** `blog-plans/BLOG-PLAN-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 ### Step 1f — Write 5 Blog Posts
 
@@ -341,7 +341,7 @@ Skip execution. Save plan file. Tell user to apply changes manually.
 
 ---
 
-Save before/after snapshot → `implementation/SNAPSHOT-YYYY-MM-DD.md`
+Save before/after snapshot → `implementation/SNAPSHOT-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 ---
 
@@ -501,7 +501,7 @@ Monthly on-page SEO review for {CLIENT_NAME} — platform: {PLATFORM}.
 3. Run last30days for "{PRIMARY_NICHE}".
 4. Identify: new CTR gaps, regressions vs prior snapshot, new keyword opportunities.
 5. Run full SEO audit + seo-implementation-plan together.
-   Save Report 1 (combined audit + plan) to reports/MONTHLY-AUDIT-PLAN-YYYY-MM.md.
+   Save Report 1 (combined audit + plan) to reports/MONTHLY-AUDIT-PLAN-YYYY-MM.md then convert to PDF (see PDF Conversion Pattern).
    Report 1 must include: health score, top issues, CTR gaps, keyword opportunities,
    regressions vs prior snapshot, organic baseline, then the full before/after
    implementation plan for every proposed change grouped by category (A–G),
@@ -512,8 +512,8 @@ Monthly on-page SEO review for {CLIENT_NAME} — platform: {PLATFORM}.
    - Webflow: Webflow Data API + MCP
    - WordPress: WP REST API + SEO plugin meta
    - Unknown: save plan only, no execution
-8. Save SNAPSHOT-YYYY-MM-DD.md.
-9. Write Report 2 — post-implementation comparison — to reports/MONTHLY-POST-IMPL-YYYY-MM.md.
+8. Save SNAPSHOT-YYYY-MM-DD.md then convert to PDF (see PDF Conversion Pattern).
+9. Write Report 2 — post-implementation comparison — to reports/MONTHLY-POST-IMPL-YYYY-MM.md then convert to PDF (see PDF Conversion Pattern).
    Use the 3blog-seo-first-run Phase 6 structure (10 sections):
    1. Run Summary (health score before/after, coverage metrics delta)
    2. On-Page Changes Applied (grouped: SEO Titles, Meta Descriptions, Schema, other)
@@ -541,7 +541,7 @@ Week 1 Report for {CLIENT_NAME}.
 4. Check which planned items were completed vs skipped vs deferred.
 5. Pull current GSC impressions for newly pushed posts (if indexed yet).
 6. Write WEEK-1-REPORT using the standard format.
-7. Save to reports/WEEK-1-REPORT-{DATE}.md.
+7. Save to reports/WEEK-1-REPORT-{DATE}.md then convert to PDF (see PDF Conversion Pattern).
 ```
 
 ### Task 4: Final Report
@@ -588,7 +588,7 @@ On-page approval:        {manual | auto-execute}
 
 ## Week 1 Report Format
 
-Save to: `reports/WEEK-1-REPORT-YYYY-MM-DD.md`
+Save to: `reports/WEEK-1-REPORT-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 ```markdown
 # Week 1 Report — {CLIENT_NAME}
@@ -639,7 +639,7 @@ Two reports are produced each month. Report 1 is saved **before execution** (aft
 
 ### Report 1 — Monthly Audit + Implementation Plan
 
-Save to: `reports/MONTHLY-AUDIT-PLAN-YYYY-MM.md`
+Save to: `reports/MONTHLY-AUDIT-PLAN-YYYY-MM.md` then convert to PDF (see PDF Conversion Pattern below)
 
 ```markdown
 # Monthly SEO Audit & Implementation Plan — {MONTH YEAR} — {CLIENT_NAME}
@@ -734,7 +734,7 @@ Save to: `reports/MONTHLY-AUDIT-PLAN-YYYY-MM.md`
 
 ### Report 2 — Post-Implementation Comparison
 
-Save to: `reports/MONTHLY-POST-IMPL-YYYY-MM.md`
+Save to: `reports/MONTHLY-POST-IMPL-YYYY-MM.md` then convert to PDF (see PDF Conversion Pattern below)
 
 Follows the **3blog-seo-first-run Phase 6 structure** exactly — 10 sections:
 
@@ -810,6 +810,40 @@ Reason categories: API limitation | Live URL risk | Theme-level | Manual dashboa
 2. [Second priority — new keyword opportunity or GSC gap]
 3. [Third priority — content or schema gap]
 ```
+
+---
+
+## PDF Conversion Pattern
+
+After each "Save to:" step, write the file as `.md` first then immediately run this Python script via Bash (set `md_path` to the actual path just written):
+
+```python
+import subprocess, sys, os
+subprocess.run([sys.executable, '-m', 'pip', 'install', 'markdown', '-q'], capture_output=True)
+import markdown as md_lib
+
+md_path = "<THE_EXACT_PATH_WRITTEN_ABOVE>"  # ← set to the actual path
+html_path = md_path[:-3] + "_tmp.html"
+pdf_path  = md_path[:-3] + ".pdf"
+
+with open(md_path) as f:
+    body = f.read()
+html_body = md_lib.markdown(body, extensions=["tables", "fenced_code"])
+html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:920px;margin:40px auto;padding:0 48px;color:#1a1a2e;line-height:1.65}}h1{{font-size:2em;border-bottom:3px solid #e0e0e8;padding-bottom:12px}}h2{{font-size:1.4em;color:#2d2d50;border-bottom:1px solid #eee;padding-bottom:6px;margin-top:36px}}h3{{color:#444;margin-top:24px}}table{{border-collapse:collapse;width:100%;margin:16px 0;font-size:.9em}}th{{background:#f0f0f8;font-weight:600;padding:10px 14px;border:1px solid #d0d0e0}}td{{padding:8px 14px;border:1px solid #d0d0e0}}tr:nth-child(even){{background:#f8f8fc}}code{{background:#f4f4f8;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:.88em}}pre{{background:#f4f4f8;padding:16px;border-radius:6px}}pre code{{background:none;padding:0}}hr{{border:none;border-top:2px solid #eee;margin:28px 0}}</style>
+</head><body>{html_body}</body></html>"""
+with open(html_path, "w") as f:
+    f.write(html)
+chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header",
+                html_path], check=True, capture_output=True)
+os.remove(html_path)
+os.remove(md_path)
+print(f"✅ PDF saved: {pdf_path}")
+```
+
+Do NOT convert `.html` blog files — those stay as `.html`.
 
 ---
 

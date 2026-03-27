@@ -35,10 +35,10 @@ Before starting, confirm:
 All outputs go to:
 ```
 Content & SEO/outputs/<domain>/
-├── audit/              ← Phase 1 audit report (AUDIT-YYYY-MM-DD.md)
-│                          Phase 6 post-implementation report (POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md)
-├── research/           ← Phase 2a performance data (GSC-REPORT-YYYY-MM-DD.md, GA4-REPORT-YYYY-MM-DD.md)
-└── implementation/     ← Phase 3 implementation plan (SEO-PLAN-YYYY-MM-DD.md)
+├── audit/              ← Phase 1 audit report (AUDIT-YYYY-MM-DD.pdf)
+│                          Phase 6 post-implementation report (POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf)
+├── research/           ← Phase 2a performance data (GSC-REPORT-YYYY-MM-DD.pdf, GA4-REPORT-YYYY-MM-DD.pdf)
+└── implementation/     ← Phase 3 implementation plan (SEO-PLAN-YYYY-MM-DD.pdf)
 ```
 
 ## Subfolder Creation
@@ -108,13 +108,13 @@ Never execute changes without explicit approval.
 All output files must follow this exact pattern so skills can reliably find them:
 
 ```
-audit/AUDIT-YYYY-MM-DD.md                        ← base SEO audit
-audit/POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md    ← after Webflow changes (this skill's Phase 6 output)
-implementation/SEO-PLAN-YYYY-MM-DD.md            ← action/implementation plan (this skill's Phase 3 output)
-research/PERFORMANCE-REPORT-YYYY-MM-DD.md        ← GA4 + GSC combined
-research/GSC-REPORT-YYYY-MM-DD.md                ← GSC standalone
-research/GA4-REPORT-YYYY-MM-DD.md                ← GA4 standalone
-research/SOCIAL-TRENDS-YYYY-MM-DD.md             ← last30days market research (Phase 2c)
+audit/AUDIT-YYYY-MM-DD.pdf                        ← base SEO audit
+audit/POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf    ← after Webflow changes (this skill's Phase 6 output)
+implementation/SEO-PLAN-YYYY-MM-DD.pdf            ← action/implementation plan (this skill's Phase 3 output)
+research/PERFORMANCE-REPORT-YYYY-MM-DD.pdf        ← GA4 + GSC combined
+research/GSC-REPORT-YYYY-MM-DD.pdf                ← GSC standalone
+research/GA4-REPORT-YYYY-MM-DD.pdf                ← GA4 standalone
+research/SOCIAL-TRENDS-YYYY-MM-DD.pdf             ← last30days market research (Phase 2c)
 ```
 
 ## Loading Historical Context
@@ -122,14 +122,14 @@ research/SOCIAL-TRENDS-YYYY-MM-DD.md             ← last30days market research 
 Check the following folders and load the **most recent file in each** (sort by date in filename YYYY-MM-DD, descending):
 
 **`audit/` — load both if they exist:**
-1. `POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md` — highest priority; this skill produces this file in Phase 6; it contains the current SEO score, all resolved items (✅), and what still needs doing
-2. `AUDIT-YYYY-MM-DD.md` — base audit; use as supplement or fallback
+1. `POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf` — highest priority; this skill produces this file in Phase 6; it contains the current SEO score, all resolved items (✅), and what still needs doing
+2. `AUDIT-YYYY-MM-DD.pdf` — base audit; use as supplement or fallback
 
 **`implementation/` — load newest:**
-3. `SEO-PLAN-YYYY-MM-DD.md` — the approved action plan from the last cycle
+3. `SEO-PLAN-YYYY-MM-DD.pdf` — the approved action plan from the last cycle
 
 **`research/` — load newest if exists:**
-4. `PERFORMANCE-REPORT-YYYY-MM-DD.md` or `GSC-REPORT-YYYY-MM-DD.md` — prior organic baseline for comparison
+4. `PERFORMANCE-REPORT-YYYY-MM-DD.pdf` or `GSC-REPORT-YYYY-MM-DD.pdf` — prior organic baseline for comparison
 
 **If files exist:**
 - Read all loaded files before doing anything else
@@ -158,7 +158,7 @@ searching for, and sharing right now — grounding the plan in real demand signa
 **Execute:**
 - Run the last30days research skill for the primary niche topic
 - Focus: top content themes, emerging questions, competitor mentions, trending angles
-- Save to: `Content & SEO/outputs/<domain>/research/SOCIAL-TRENDS-YYYY-MM-DD.md`
+- Save to: `Content & SEO/outputs/<domain>/research/SOCIAL-TRENDS-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 **Feed into Phase 3:** Surface content angles and audience questions that aren't
 yet covered on the site but are generating real engagement.
@@ -189,7 +189,7 @@ Python libraries required: `google-analytics-data`, `google-api-python-client`, 
 - Top landing pages by sessions + bounce rate
 - Compare organic session count vs HISTORICAL_CONTEXT if available
 
-**Save to:** `Content & SEO/outputs/<domain>/research/PERFORMANCE-REPORT-YYYY-MM-DD.md`
+**Save to:** `Content & SEO/outputs/<domain>/research/PERFORMANCE-REPORT-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 **Feed into Phase 3:** CTR gaps become priority fixes in the implementation plan.
 Pages ranking position 2–10 with CTR <3% are higher priority than new content.
@@ -253,3 +253,35 @@ To re-index a page later, the script must be removed from that page via the API.
 
 The site ID is required for most API calls. Fetch it using `data_sites_tool` if not known.
 For aexphl.com the site ID is `5e1ef6e0ff2a7e7d638dd146`.
+
+---
+
+## PDF Conversion Pattern
+
+After each phase that saves a report file, write the file as `.md` first then immediately run this Python script via Bash (set `md_path` to the actual path just written):
+
+```python
+import subprocess, sys, os
+subprocess.run([sys.executable, '-m', 'pip', 'install', 'markdown', '-q'], capture_output=True)
+import markdown as md_lib
+
+md_path = "<THE_EXACT_PATH_WRITTEN_ABOVE>"  # ← set to the actual path
+html_path = md_path[:-3] + "_tmp.html"
+pdf_path  = md_path[:-3] + ".pdf"
+
+with open(md_path) as f:
+    body = f.read()
+html_body = md_lib.markdown(body, extensions=["tables", "fenced_code"])
+html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:920px;margin:40px auto;padding:0 48px;color:#1a1a2e;line-height:1.65}}h1{{font-size:2em;border-bottom:3px solid #e0e0e8;padding-bottom:12px}}h2{{font-size:1.4em;color:#2d2d50;border-bottom:1px solid #eee;padding-bottom:6px;margin-top:36px}}h3{{color:#444;margin-top:24px}}table{{border-collapse:collapse;width:100%;margin:16px 0;font-size:.9em}}th{{background:#f0f0f8;font-weight:600;padding:10px 14px;border:1px solid #d0d0e0}}td{{padding:8px 14px;border:1px solid #d0d0e0}}tr:nth-child(even){{background:#f8f8fc}}code{{background:#f4f4f8;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:.88em}}pre{{background:#f4f4f8;padding:16px;border-radius:6px}}pre code{{background:none;padding:0}}hr{{border:none;border-top:2px solid #eee;margin:28px 0}}</style>
+</head><body>{html_body}</body></html>"""
+with open(html_path, "w") as f:
+    f.write(html)
+chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header",
+                html_path], check=True, capture_output=True)
+os.remove(html_path)
+os.remove(md_path)
+print(f"✅ PDF saved: {pdf_path}")
+```

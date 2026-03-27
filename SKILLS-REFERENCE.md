@@ -2,7 +2,7 @@
 
 > Master reference for all skills, orchestrators, agents, subagents, and commands.
 > Source of truth: `seo-workflow/` — deploy with `bash seo-workflow/install.sh`
-> Last updated: 2026-03-23 (23 skills: 4 orchestrators, 2 data, 1 research, 1 routing plugin, 12 specialists, 1 design, 1 planning, 1 reporting)
+> Last updated: 2026-03-27 (24 skills: 4 orchestrators, 2 data, 1 research, 1 routing plugin, 12 specialists, 1 design, 1 planning, 1 reporting, 1 workspace maintenance)
 
 ---
 
@@ -147,7 +147,7 @@ Run from the **client workspace** (`clients/{domain}/`).
 **Extensible:** Adding a new platform = add a row to the routing table + new execution blocks.
 **Uses:** Claude Code scheduled tasks.
 **Credentials needed:** Platform token (`SHOPLINE_*` / `WEBFLOW_*` / `WP_*`) + `{CLIENT}_GOOGLE_KEY` + `PERPLEXITY_API_KEY` (or `OPENAI_API_KEY` for aexphl).
-**Output files:** All subfolders + `reports/WEEK-1-REPORT-*.md`, `reports/MONTHLY-AUDIT-PLAN-*.md`, `reports/MONTHLY-POST-IMPL-*.md`.
+**Output files:** All subfolders + `reports/WEEK-1-REPORT-*.pdf`, `reports/MONTHLY-AUDIT-PLAN-*.pdf`, `reports/MONTHLY-POST-IMPL-*.pdf`.
 
 ---
 
@@ -200,7 +200,7 @@ These are standalone commands that work from any client workspace.
 **What it does:** Builds a complete SEO implementation plan — stops at the plan, never executes.
 **Phases:** Historical context → SEO Audit (if needed) → GSC + GA4 + last30days (parallel) → before/after implementation plan for every proposed change → save → present for approval.
 **Platform-aware:** Detects platform from `CLAUDE.md` to correctly label Category G manual items and direct user to the right execution skill. Does NOT execute regardless of platform.
-**Output:** `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md`
+**Output:** `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.pdf`
 **Use when:** You want a plan before deciding what to implement, or to feed into manual or scheduled execution.
 **Does NOT execute.** To execute, run the platform-matching skill: `/shopline-onpage-implement`, `/webflow-onpage-implement`, or `/wordpress-onpage-implement`.
 
@@ -209,7 +209,7 @@ These are standalone commands that work from any client workspace.
 **Loads:** All prior output files across the entire engagement history.
 **Compares:** Starting baseline vs current state — SEO score, traffic, rankings, CTR.
 **Includes:** All blogs written, all on-page changes executed, all issues resolved, metric movement.
-**Output:** `audit/FINAL-REPORT-YYYY-MM-DD.md`
+**Output:** `audit/FINAL-REPORT-YYYY-MM-DD.pdf`
 **Use when:** Wrapping up a campaign, engagement period, or automation run.
 
 ---
@@ -218,11 +218,11 @@ These are standalone commands that work from any client workspace.
 
 ### `/gsc-report`
 Pull 30-day Google Search Console data. Top queries (impressions, CTR, position), CTR gap opportunities, top pages by clicks.
-**Output:** `research/GSC-REPORT-YYYY-MM-DD.md`
+**Output:** `research/GSC-REPORT-YYYY-MM-DD.pdf`
 
 ### `/ga4-report`
 Pull 30-day Google Analytics 4 data. Sessions by channel, top landing pages, bounce rates, organic traffic baseline.
-**Output:** `research/GA4-REPORT-YYYY-MM-DD.md`
+**Output:** `research/GA4-REPORT-YYYY-MM-DD.pdf`
 
 ### `/last30days`
 Research any topic across Reddit, X, YouTube, TikTok, Instagram, Hacker News, Polymarket. Produces expert synthesis.
@@ -238,7 +238,7 @@ Research any topic across Reddit, X, YouTube, TikTok, Instagram, Hacker News, Po
 
 ### `/seo-audit`
 Full site audit. Crawls up to 500 pages, detects business type, delegates to 6 specialist subagents in parallel, produces 0–100 health score with prioritised action list.
-**Output:** `audit/AUDIT-YYYY-MM-DD.md`
+**Output:** `audit/AUDIT-YYYY-MM-DD.pdf`
 **Subagents spawned:** seo-technical, seo-content, seo-schema, seo-sitemap, seo-performance, seo-visual
 
 ### `/seo-technical`
@@ -289,7 +289,7 @@ Write complete blog articles — answer-first, TL;DR box, sourced statistics, ci
 
 ### `/blog-calendar` (via seo-and-blog)
 28-day blog content calendar. 3 posts spaced ≥7 days apart. Avoids prior topic overlap.
-**Output:** `blog-plans/BLOG-PLAN-YYYY-MM-DD.md`
+**Output:** `blog-plans/BLOG-PLAN-YYYY-MM-DD.pdf`
 
 ---
 
@@ -301,6 +301,16 @@ Instagram carousel generator. Collects brand details via in-chat questionnaire, 
 **Output:** `Design/Carousel-YYYY-MM-DD/carousel.html` + `Design/Carousel-YYYY-MM-DD/slides/slide_N.png`
 **Needs:** `playwright` Python package + Chromium (`pip3 install playwright && playwright install chromium`)
 **Invoke as:** `/carousel` (questionnaire will ask for topic and all brand details)
+
+---
+
+## Workspace Maintenance
+
+### `/update-everywhere`
+**What it does:** Post-session propagation enforcer. Detects every file changed in the current session (via `git status` + `git diff`), classifies each change against the full propagation matrix, scans all dependent targets (SKILLS-REFERENCE.md, install.sh, README.md, workspace CLAUDE.md, client-template, all `clients/*/CLAUDE.md` and command folders, orchestrator SKILL.md Sub-skill Reference Paths), builds a before/after plan, gets explicit approval, then executes every required update, runs `install.sh`, and verifies no stale references remain.
+**Run from:** Agency workspace root (`RightClickAI-seo-workspace/`)
+**When to use:** After any session where skills, commands, orchestrators, output filenames, platform routing, or workspace structure changed.
+**Phases:** Detect changes → Read all changed files + propagation targets → Classify against propagation matrix → Build plan → **Approval gate** → Execute all propagations → Deploy via install.sh → Verify consistency
 
 ---
 

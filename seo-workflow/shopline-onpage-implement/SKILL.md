@@ -89,7 +89,7 @@ If any call returns `429 Too Many Requests`, wait 2 seconds and retry once.
 All outputs go to:
 ```
 {WORKSPACE_ROOT}/outputs/shopline-{STORE_HANDLE}/
-├── audit/              ← Phase 1 audit (AUDIT-YYYY-MM-DD.md)
+├── audit/              ← Phase 1 audit (AUDIT-YYYY-MM-DD.pdf)
 │                          Phase 6 post-implementation report
 ├── research/           ← Phase 2a GSC/GA4 data
 └── implementation/     ← Phase 2b snapshot + Phase 3 plan
@@ -112,14 +112,14 @@ All output filenames include date suffixes — never overwrite prior files.
 ## File Naming Convention
 
 ```
-audit/AUDIT-YYYY-MM-DD.md
-audit/POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md
-implementation/SHOPLINE-SNAPSHOT-YYYY-MM-DD.md
-implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md
-research/PERFORMANCE-REPORT-YYYY-MM-DD.md
-research/GSC-REPORT-YYYY-MM-DD.md
-research/GA4-REPORT-YYYY-MM-DD.md
-research/SOCIAL-TRENDS-YYYY-MM-DD.md
+audit/AUDIT-YYYY-MM-DD.pdf
+audit/POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf
+implementation/SHOPLINE-SNAPSHOT-YYYY-MM-DD.pdf
+implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.pdf
+research/PERFORMANCE-REPORT-YYYY-MM-DD.pdf
+research/GSC-REPORT-YYYY-MM-DD.pdf
+research/GA4-REPORT-YYYY-MM-DD.pdf
+research/SOCIAL-TRENDS-YYYY-MM-DD.pdf
 ```
 
 ---
@@ -194,7 +194,7 @@ If the folder doesn't exist at all → this is a first run. Note it and proceed 
 Sort all files by the date suffix in the filename (`YYYY-MM-DD`) descending. Load the **newest** in each category:
 
 #### Priority 1 — Post-Implementation Audit (highest signal)
-Pattern: `audit/POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.md`
+Pattern: `audit/POST-IMPLEMENTATION-AUDIT-YYYY-MM-DD.pdf`
 
 This file is produced by Phase 6. It contains:
 - Current SEO score (after last execution)
@@ -209,7 +209,7 @@ If this file exists → **load it as the primary baseline**. Extract:
 - `LAST_SEO_COVERAGE` — blog post and page metafield coverage %
 
 #### Priority 2 — Base Audit
-Pattern: `audit/AUDIT-YYYY-MM-DD.md`
+Pattern: `audit/AUDIT-YYYY-MM-DD.pdf`
 
 Load as supplementary context if it exists. If no POST-IMPLEMENTATION-AUDIT exists, this becomes the primary baseline.
 
@@ -220,7 +220,7 @@ Extract:
 - `QUICK_WINS` — top quick wins
 
 #### Priority 3 — Implementation Plan
-Pattern: `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.md`
+Pattern: `implementation/IMPLEMENTATION-PLAN-YYYY-MM-DD.pdf`
 
 Load if it exists. Extract:
 - What was proposed (Categories A–G)
@@ -228,13 +228,13 @@ Load if it exists. Extract:
 - Any items still outstanding from the plan
 
 #### Priority 4 — Shopline Snapshot
-Pattern: `implementation/SHOPLINE-SNAPSHOT-YYYY-MM-DD.md`
+Pattern: `implementation/SHOPLINE-SNAPSHOT-YYYY-MM-DD.pdf`
 
 Load if it exists. This shows the previous "before" state of all pages and blog posts.
 Use it to detect regressions (e.g., a page that previously had a seoTitle that is now missing).
 
 #### Priority 5 — Performance Report
-Pattern: `research/PERFORMANCE-REPORT-YYYY-MM-DD.md` or `research/GSC-REPORT-YYYY-MM-DD.md`
+Pattern: `research/PERFORMANCE-REPORT-YYYY-MM-DD.pdf` or `research/GSC-REPORT-YYYY-MM-DD.pdf`
 
 Load if it exists. Extract organic session baseline and CTR gap list for comparison.
 
@@ -329,7 +329,7 @@ If credentials ARE available:
 - Pull top queries (impressions, CTR, position) from GSC for last 30 days
 - Pull sessions by channel + top landing pages from GA4 for last 30 days
 - Identify CTR gap opportunities: position ≤10, CTR <3%
-- Save to: `research/GSC-REPORT-YYYY-MM-DD.md` and `research/GA4-REPORT-YYYY-MM-DD.md`
+- Save to: `research/GSC-REPORT-YYYY-MM-DD.md` and `research/GA4-REPORT-YYYY-MM-DD.md` then convert each to PDF (see PDF Conversion Pattern below)
 - Feed CTR gaps into Phase 3 as priority fixes
 
 ---
@@ -345,7 +345,7 @@ This reveals what the target audience is actually talking about, searching for, 
 **Execute:**
 - Run last30days research skill for the primary niche topic (e.g., "sleep products mattress")
 - Focus: top content themes, emerging questions, competitor mentions, trending angles
-- Save to: `{WORKSPACE_ROOT}/outputs/shopline-{STORE_HANDLE}/research/SOCIAL-TRENDS-YYYY-MM-DD.md`
+- Save to: `{WORKSPACE_ROOT}/outputs/shopline-{STORE_HANDLE}/research/SOCIAL-TRENDS-YYYY-MM-DD.md` then convert to PDF (see PDF Conversion Pattern below)
 
 **Feed into Phase 3:** Surface content gaps and trending angles for the blog plan.
 
@@ -432,4 +432,36 @@ POST {BASE_URL}/metafields_set.json
 Reading existing SEO metafields:
 ```
 GET {BASE_URL}/metafields.json?owner_resource=articles&owner_id={id}&namespace=seo
+```
+
+---
+
+## PDF Conversion Pattern
+
+After each phase that saves a report file, write the file as `.md` first then immediately run this Python script via Bash (set `md_path` to the actual path just written):
+
+```python
+import subprocess, sys, os
+subprocess.run([sys.executable, '-m', 'pip', 'install', 'markdown', '-q'], capture_output=True)
+import markdown as md_lib
+
+md_path = "<THE_EXACT_PATH_WRITTEN_ABOVE>"  # ← set to the actual path
+html_path = md_path[:-3] + "_tmp.html"
+pdf_path  = md_path[:-3] + ".pdf"
+
+with open(md_path) as f:
+    body = f.read()
+html_body = md_lib.markdown(body, extensions=["tables", "fenced_code"])
+html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:920px;margin:40px auto;padding:0 48px;color:#1a1a2e;line-height:1.65}}h1{{font-size:2em;border-bottom:3px solid #e0e0e8;padding-bottom:12px}}h2{{font-size:1.4em;color:#2d2d50;border-bottom:1px solid #eee;padding-bottom:6px;margin-top:36px}}h3{{color:#444;margin-top:24px}}table{{border-collapse:collapse;width:100%;margin:16px 0;font-size:.9em}}th{{background:#f0f0f8;font-weight:600;padding:10px 14px;border:1px solid #d0d0e0}}td{{padding:8px 14px;border:1px solid #d0d0e0}}tr:nth-child(even){{background:#f8f8fc}}code{{background:#f4f4f8;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:.88em}}pre{{background:#f4f4f8;padding:16px;border-radius:6px}}pre code{{background:none;padding:0}}hr{{border:none;border-top:2px solid #eee;margin:28px 0}}</style>
+</head><body>{html_body}</body></html>"""
+with open(html_path, "w") as f:
+    f.write(html)
+chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                f"--print-to-pdf={pdf_path}", "--print-to-pdf-no-header",
+                html_path], check=True, capture_output=True)
+os.remove(html_path)
+os.remove(md_path)
+print(f"✅ PDF saved: {pdf_path}")
 ```

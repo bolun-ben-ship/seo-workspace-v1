@@ -39,6 +39,7 @@ SKILLS=(
   seo-sitemap
   seo-technical
   shopline-onpage-implement
+  update-everywhere
   webflow-onpage-implement
 )
 

@@ -80,7 +80,7 @@ RightClickAI-seo-workspace/
 - **New machine** → pull repo → run `install.sh` → all skills ready
 
 `install.sh` deploys three things:
-1. **Skills** → `~/.claude/skills/` (23 skills)
+1. **Skills** → `~/.claude/skills/` (24 skills)
 2. **Agents** → `~/.claude/agents/` (6 subagents)
 3. **Global commands** → `~/.claude/commands/` (`start-client.md`, `prime.md`)
 
