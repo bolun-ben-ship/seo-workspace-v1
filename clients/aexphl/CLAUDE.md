@@ -35,8 +35,18 @@
 - Google credentials env var: `AEXPHL_GOOGLE_KEY`
 
 ## MCP
-- Webflow MCP is required for executing CMS changes
-- Config: `.mcp.json` in this folder (reads token from `$WEBFLOW_AEXPHL_TOKEN`)
+
+**`settings.json` is NOT for MCP servers** — it handles env vars, permissions, and hooks only.
+Putting `mcpServers` in `settings.json` will fail schema validation.
+
+| Scope | Mac | Windows |
+|---|---|---|
+| **Global** (all projects) | `~/.mcp.json` | `%APPDATA%\Claude\mcp.json` |
+| **Project-specific** | `.mcp.json` in this folder | `.mcp.json` in this folder |
+
+- **Webflow MCP** (project-scoped) → `.mcp.json` in this folder — reads token from `$WEBFLOW_AEXPHL_TOKEN`
+- **PostHog MCP** (global) → `~/.mcp.json` (Mac) — reads key from `POSTHOG_AUTH_HEADER` env var
+- Env var values go in `~/.claude/settings.json` under `"env"` — that is the only MCP-related thing that belongs there
 
 ## Env Vars — Two Places Required
 

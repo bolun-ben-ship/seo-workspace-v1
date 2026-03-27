@@ -115,6 +115,52 @@ If `/initialise` is run on a new machine, it should check for and set these perm
 
 ---
 
+## MCP Server Configuration
+
+**`settings.json` is NOT for MCP servers.** It handles env vars, permissions, and hooks only.
+Putting `mcpServers` in `settings.json` will fail schema validation.
+
+### Where MCP servers live
+
+| Scope | Mac | Windows |
+|---|---|---|
+| **Global** (all projects) | `~/.mcp.json` | `%APPDATA%\Claude\mcp.json` |
+| **Project-specific** | `.mcp.json` in the project folder | `.mcp.json` in the project folder |
+
+### Rules
+- **Global MCP servers** (e.g. PostHog, shared tools) → `~/.mcp.json` (Mac) or `%APPDATA%\Claude\mcp.json` (Windows)
+- **Per-client MCP servers** (e.g. Webflow, Mailchimp for a specific client) → `.mcp.json` inside `clients/{domain}/`
+- Auth tokens for MCP servers go in the `env` block of that same `.mcp.json`, referencing env vars
+- The env var values themselves go in `~/.claude/settings.json` under `"env"` — that's the only MCP-related thing that goes in `settings.json`
+
+### Example — global MCP (`~/.mcp.json` on Mac)
+```json
+{
+  "mcpServers": {
+    "posthog": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote@latest", "https://mcp.posthog.com/sse", "--header", "Authorization:${POSTHOG_AUTH_HEADER}"],
+      "env": { "POSTHOG_AUTH_HEADER": "Bearer phx_yourkey" }
+    }
+  }
+}
+```
+
+### Example — project MCP (`.mcp.json` in client folder)
+```json
+{
+  "mcpServers": {
+    "webflow": {
+      "command": "npx",
+      "args": ["-y", "@webflow/mcp-server@latest"],
+      "env": { "WEBFLOW_TOKEN": "${WEBFLOW_AEXPHL_TOKEN}" }
+    }
+  }
+}
+```
+
+---
+
 ## Onboarding a New Client
 
 Open this workspace in Claude Code and run:

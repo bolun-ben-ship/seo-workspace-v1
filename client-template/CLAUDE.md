@@ -78,6 +78,20 @@ Design/
 
 ---
 
+## MCP Configuration
+
+**`settings.json` is NOT for MCP servers** — it handles env vars, permissions, and hooks only.
+
+| Scope | Mac | Windows |
+|---|---|---|
+| **Global** (all projects) | `~/.mcp.json` | `%APPDATA%\Claude\mcp.json` |
+| **Project-specific** | `.mcp.json` in this client folder | `.mcp.json` in this client folder |
+
+For this client: project MCP servers live in `.mcp.json` here. Global tools (e.g. PostHog) go in the machine-level file above.
+Auth tokens reference env vars — the var values go in `~/.claude/settings.json` under `"env"`.
+
+---
+
 ## Context Loading Rules
 
 When a task involves SEO, content, marketing, copywriting, or strategy — load these before responding:
