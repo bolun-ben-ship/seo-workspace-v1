@@ -13,3 +13,9 @@ __pycache__/
 Thumbs.db
 # Claude local settings (contains tokens from test commands)
 .claude/settings.local.json
+
+# Runtime logs
+clients/**/*.log
+
+# SEO audit screenshots (regenerable binary assets)
+clients/**/screenshots/
