@@ -573,11 +573,11 @@ sync_monday() {
     [ -n "$cursor" ] && cursor_clause=", cursor: \\\"${cursor}\\\""
 
     local resp
-    resp=$(curl -s \
+    resp=$(curl -s --max-time 60 \
       -H "Authorization: $MONDAY_API_KEY" \
       -H "Content-Type: application/json" \
       -X POST "https://api.monday.com/v2" \
-      -d "{\"query\": \"{ boards(ids: 1907973121) { items_page(limit: 100${cursor_clause}) { cursor items { name updated_at column_values(ids: [\\\"lead_email\\\", \\\"phone_mkq1vacq\\\", \\\"dropdown\\\", \\\"lead_status\\\", \\\"lead_owner\\\", \\\"text6\\\", \\\"short_textc63e8txn\\\", \\\"long_text5\\\", \\\"text_mkrcsr5t\\\", \\\"dropdown_mkrcsktv\\\", \\\"date\\\"]) { id text } } } } }\"}")
+      -d "{\"query\": \"{ boards(ids: 1907973121) { items_page(limit: 100${cursor_clause}) { cursor items { name updated_at column_values(ids: [\\\"lead_email\\\", \\\"phone_mkq1vacq\\\", \\\"dropdown\\\", \\\"lead_status\\\", \\\"lead_owner\\\", \\\"text6\\\", \\\"short_textc63e8txn\\\", \\\"long_text5\\\", \\\"text_mkrcsr5t\\\", \\\"dropdown_mkrcsktv\\\", \\\"date\\\"]) { id text } } } } }\"}" 2>/dev/null) || { log "  ⚠️  Monday.com Leads board API error (timeout/network) — will retry next run"; return; }
 
     echo "$resp" | python3 -c "
 import sys, json
@@ -699,11 +699,11 @@ except: print('')
     [ -n "$cursor" ] && cursor_clause=", cursor: \\\"${cursor}\\\""
 
     local resp
-    resp=$(curl -s \
+    resp=$(curl -s --max-time 60 \
       -H "Authorization: $MONDAY_API_KEY" \
       -H "Content-Type: application/json" \
       -X POST "https://api.monday.com/v2" \
-      -d "{\"query\": \"{ boards(ids: 1917616922) { items_page(limit: 100${cursor_clause}) { cursor items { name updated_at column_values(ids: [\\\"email\\\", \\\"phone\\\", \\\"country\\\", \\\"numbers\\\", \\\"dropdown\\\", \\\"text\\\", \\\"numbers5\\\", \\\"dropdown8\\\", \\\"dropdown_1\\\", \\\"dropdown_12\\\"]) { id text } } } } }\"}")
+      -d "{\"query\": \"{ boards(ids: 1917616922) { items_page(limit: 100${cursor_clause}) { cursor items { name updated_at column_values(ids: [\\\"email\\\", \\\"phone\\\", \\\"country\\\", \\\"numbers\\\", \\\"dropdown\\\", \\\"text\\\", \\\"numbers5\\\", \\\"dropdown8\\\", \\\"dropdown_1\\\", \\\"dropdown_12\\\"]) { id text } } } } }\"}" 2>/dev/null) || { log "  ⚠️  Monday.com Customers board API error (timeout/network) — will retry next run"; return; }
 
     echo "$resp" | python3 -c "
 import sys, json
